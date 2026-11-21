@@ -1,0 +1,3511 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GO BIKE | Rodamos seguros,    conectamos ciclistas.</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gobike: {
+              dark: '#0A2E1D',
+              forest: '#0F3D26',
+              lime: '#A3E635',
+              limeHover: '#84CC16',
+              black: '#0D1117',
+              card: '#131A22',
+              border: '#1F2A37'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Inter', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet.js (Mapa Interactivo Real) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Supabase JS Client (Listo para conexión real) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0D1117;
+      color: #F3F4F6;
+      overflow-x: hidden;
+    }
+    .font-display {
+      font-family: 'Outfit', sans-serif;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0D1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1F2A37;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #A3E635;
+    }
+    /* Leaflet dark theme adjustments */
+    .leaflet-container {
+      background: #0D1117 !important;
+      font-family: 'Inter', sans-serif !important;
+      z-index: 10;
+    }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: #131A22 !important;
+      color: #FFFFFF !important;
+      border: 1px solid #1F2A37;
+      border-radius: 14px !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);
+    }
+    .leaflet-popup-close-button {
+      color: #9CA3AF !important;
+      padding: 6px 8px !important;
+    }
+    .pulse-lime {
+      box-shadow: 0 0 0 0 rgba(163, 230, 53, 0.7);
+      animation: pulseLime 2s infinite;
+    }
+    @keyframes pulseLime {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(163, 230, 53, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(163, 230, 53, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(163, 230, 53, 0); }
+    }
+    .pulse-red {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      animation: pulseRed 1.8s infinite;
+    }
+    @keyframes pulseRed {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body class="bg-[#0D1117] text-gray-100 antialiased selection:bg-[#A3E635] selection:text-[#0A2E1D]">
+
+  <!-- ===================================================================== -->
+  <!-- PANTALLA DE AUTENTICACIÓN (LOGIN / REGISTRO / DEMO)                   -->
+  <!-- ===================================================================== -->
+  <div id="auth-screen" class="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-[#0A2E1D] via-[#0D1117] to-[#0D1117] relative overflow-hidden">
+    <!-- Decoración de fondo -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-[#A3E635]/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-[#0F3D26]/40 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="w-full max-w-md bg-[#131A22]/95 backdrop-blur-xl border border-[#1F2A37] rounded-3xl p-6 sm:p-8 shadow-2xl z-10">
+      <!-- Logotipo GO BIKE -->
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0F3D26] to-[#0A2E1D] border border-[#A3E635]/40 flex items-center justify-center shadow-lg mb-3">
+          <!-- SVG Moderno Bicicleta + Comunidad -->
+          <img src="logobike.png" alt="Logo GO BIKE" class="w-16 h-16 object-contain mx-auto mb-3">
+        </div>
+        <h1 class="font-display text-3xl font-black tracking-tight text-white">
+          GO <span class="text-[#A3E635]">BIKE</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-gray-300 mt-1 font-medium">
+          "Rodamos seguros Conectamos ciclistas, Compartimos caminos."
+        </p>
+        <span class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#0A2E1D] text-[#A3E635] border border-[#A3E635]/30">
+          <i class="fa-solid fa-location-dot"></i> Colombia.
+        </span>
+      </div>
+
+      <!-- Tabs Login / Registro -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-[#0D1117] rounded-2xl border border-[#1F2A37] mb-5">
+        <button id="tab-login" onclick="switchAuthTab('login')" class="py-2.5 text-sm font-bold rounded-xl bg-[#A3E635] text-[#0A2E1D] transition-all">
+          Iniciar Sesión
+        </button>
+        <button id="tab-register" onclick="switchAuthTab('register')" class="py-2.5 text-sm font-bold rounded-xl text-gray-400 hover:text-white transition-all">
+          Crear Cuenta
+        </button>
+      </div>
+
+      <!-- Formulario Login -->
+      <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1.5">Correo electrónico</label>
+          <input type="email" id="login-email" required value="camila.rodriguez@gobike.co" placeholder="ciclista@gobike.co"
+            class="w-full px-4 py-3 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1.5">Contraseña</label>
+          <input type="password" id="login-password" required value="********" placeholder="••••••••"
+            class="w-full px-4 py-3 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]" />
+        </div>
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-sm transition-all shadow-lg shadow-[#A3E635]/20 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bicycle"></i> Entrar a GO BIKE
+        </button>
+      </form>
+
+      <!-- Formulario Registro -->
+      <form id="form-register" onsubmit="handleRegister(event)" class="space-y-3 hidden">
+
+        <div>
+  <label class="block text-xs font-medium text-gray-300 mb-1">Ciudad / Región de la Ruta</label>
+  <select id="route-city" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#0A140F] border border-[#1F2A37] text-white text-sm focus:border-[#A3E635] focus:outline-none">
+    <option value="Bogotá">Bogotá & Cundinamarca</option>
+    <option value="Medellín">Medellín & Antioquia</option>
+    <option value="Cali">Cali & Valle del Cauca</option>
+    <option value="Barranquilla">Barranquilla & Atlántico</option>
+    <option value="Cartagena">Cartagena & Bolívar</option>
+    <option value="Bucaramanga">Bucaramanga & Santander</option>
+    <option value="Pereira">Pereira & Risaralda</option>
+    <option value="Manizales">Manizales & Caldas</option>
+    <option value="Santa Marta">Santa Marta & Magdalena</option>
+    <option value="Ibagué">Ibagué & Tolima</option>
+    <option value="Villavicencio">Villavicencio & Meta</option>
+    <option value="Tunja">Tunja & Boyacá</option>
+  </select>
+
+</div>
+        <!-- CREADOR INTERACTIVO DE AVATAR EN REGISTRO -->
+        <div class="p-3.5 rounded-2xl bg-[#0D1117] border border-[#1F2A37] space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-[#A3E635] flex items-center gap-1.5">
+              <i class="fa-solid fa-helmet-safety"></i> Personaliza tu Avatar Ciclista
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="randomizeAvatar('reg')" class="px-2.5 py-1 rounded-lg bg-[#0A2E1D] hover:bg-[#0F3D26] border border-[#A3E635]/40 text-[#A3E635] text-[11px] font-bold transition-all">
+                <i class="fa-solid fa-shuffle mr-1"></i> Aleatorio
+              </button>
+              <label class="px-2.5 py-1 rounded-lg bg-[#1F2A37] hover:bg-gray-700 text-gray-200 text-[11px] font-bold cursor-pointer transition-all">
+                <i class="fa-solid fa-upload mr-1"></i> Subir Foto
+                <input type="file" accept="image/*" onchange="handleAvatarPhotoUpload(event, 'reg')" class="hidden" />
+              </label>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-center gap-3">
+            <div id="reg-avatar-preview" class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#A3E635] shrink-0 bg-[#131A22] shadow-lg flex items-center justify-center">
+              <!-- SVG dinámico -->
+            </div>
+            <div class="w-full grid grid-cols-2 gap-2 text-[11px]">
+              <div>
+                <label class="text-gray-400 block mb-0.5">Fondo</label>
+                <select id="reg-av-bg" onchange="updateAvatarFromUI('reg')" class="w-full px-2 py-1.5 rounded-lg bg-[#131A22] border border-[#1F2A37] text-white">
+                  <option value="#A3E635">Verde Lima</option>
+                  <option value="#0F3D26" selected>Verde Bosque</option>
+                  <option value="#111827">Negro Carbono</option>
+                  <option value="#0369A1">Azul Montaña</option>
+                  <option value="#EA580C">Naranja Ruta</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-0.5">Tono de piel</label>
+                <select id="reg-av-skin" onchange="updateAvatarFromUI('reg')" class="w-full px-2 py-1.5 rounded-lg bg-[#131A22] border border-[#1F2A37] text-white">
+                  <option value="#FDE2D2">Claro</option>
+                  <option value="#E8B99A" selected>Trigueño Claro</option>
+                  <option value="#C68B63">Canela</option>
+                  <option value="#8D5524">Moreno</option>
+                  <option value="#523118">Oscuro</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-0.5">Casco / Gorra</label>
+                <select id="reg-av-helmet" onchange="updateAvatarFromUI('reg')" class="w-full px-2 py-1.5 rounded-lg bg-[#131A22] border border-[#1F2A37] text-white">
+                  <option value="aero-lime" selected>Aero Verde Lima</option>
+                  <option value="aero-white">Aero Blanco Pro</option>
+                  <option value="mtb-visor">MTB con Visera</option>
+                  <option value="urban-black">Urbano Negro</option>
+                  <option value="cap-cycling">Sin casco (Gorra Ciclista)</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-0.5">Gafas Deportivas</label>
+                <select id="reg-av-glasses" onchange="updateAvatarFromUI('reg')" class="w-full px-2 py-1.5 rounded-lg bg-[#131A22] border border-[#1F2A37] text-white">
+                  <option value="panoramic-lime" selected>Panorámicas Lime</option>
+                  <option value="photochromic">Oscuras Fotocromáticas</option>
+                  <option value="classic">Clásicas Ruta</option>
+                  <option value="none">Sin gafas</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-0.5">Jersey / Maillot</label>
+                <select id="reg-av-jersey" onchange="updateAvatarFromUI('reg')" class="w-full px-2 py-1.5 rounded-lg bg-[#131A22] border border-[#1F2A37] text-white">
+                  <option value="gobike" selected>Equipo GO BIKE</option>
+                  <option value="polkadot">Líder Montaña (Puntos)</option>
+                  <option value="colombia">Campeón Colombia</option>
+                  <option value="black">Negro Minimalista</option>
+                  <option value="neon">Neón Alta Visibilidad</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-0.5">Cabello / Barba</label>
+                <select id="reg-av-hair" onchange="updateAvatarFromUI('reg')" class="w-full px-2 py-1.5 rounded-lg bg-[#131A22] border border-[#1F2A37] text-white">
+                  <option value="short-dark">Cabello corto oscuro</option>
+                  <option value="ponytail" selected>Coleta / Cabello largo</option>
+                  <option value="beard-short">Cabello corto + Barba</option>
+                  <option value="beard-full">Barba completa</option>
+                  <option value="clean">Sin barba / Despejado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+     <!-- ========================================== -->
+<!-- BLOQUE PERFIL: AVATAR DE LA BICICLETA       -->
+<!-- ========================================== -->
+<div class="bg-[#0D1117]/90 border border-[#1F2A37] rounded-2xl p-4 sm:p-5 space-y-4 mt-5">
+  <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#1F2A37] pb-3">
+    <div>
+      <h3 class="font-display font-bold text-sm sm:text-base text-white flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#A3E635]"></span>
+        Avatar de tu Bicicleta
+      </h3>
+      <p class="text-[11px] sm:text-xs text-gray-400">
+        Asigna un apodo o modelo, tipo de bici, color del cuadro y rines para tu perfil en GO BIKE
+      </p>
+    </div>
+
+    <button
+      type="button"
+      onclick="randomizeBikeAvatar()"
+      class="text-xs px-3 py-1.5 rounded-xl bg-[#131A22] hover:bg-[#1F2A37] text-gray-200 border border-[#1F2A37] font-medium transition"
+    >
+      🎲 Aleatorio
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+    <!-- Vista previa en vivo de la bicicleta + Apodo -->
+    <div class="md:col-span-5 flex flex-col items-center justify-center bg-[#131A22] border border-[#1F2A37] rounded-2xl p-4">
+      <div
+        id="bike-avatar-preview"
+        class="w-44 h-28 flex items-center justify-center overflow-hidden"
+      ></div>
+      <span id="bike-nickname-display" class="text-xs font-bold text-white mt-1">
+        Sin apodo
+      </span>
+      <span id="bike-avatar-label" class="text-[11px] font-semibold text-[#A3E635] mt-0.5">
+        Ruta • Cuadro Verde Lima
+      </span>
+    </div>
+
+    <!-- Controles de personalización + Apodo -->
+    <div class="md:col-span-7 space-y-3">
+      <div id="bike-avatar-controls" class="text-xs"></div>
+
+      <div class="flex justify-end pt-1">
+        <button
+          type="button"
+          onclick="saveBikeAvatarToProfile()"
+          class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-xs shadow-lg shadow-lime-500/15 transition"
+        >
+          Guardar Bicicleta en mi Perfil
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Nombre completo</label>
+            <input type="text" id="reg-name" required placeholder="Ej. Santiago Bernal"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Ciudad / Municipio</label>
+            <select id="reg-city" class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]">
+              <option value="Bogotá D.C.">Bogotá D..</option>
+              <option value="Chía, Cundinamarca">Chía, Cundinamarca</option>
+              <option value="La Calera, Cundinamarca">La Calera, Cundinamarca</option>
+              <option value="Zipaquirá, Cundinamarca">Zipaquirá, Cundinamarca</option>
+              <option value="Soacha, Cundinamarca">Soacha, Cundinamarca</option>
+              <option value="Facatativá, Cundinamarca">Facatativá, Cundinamarca</option>
+              <option value="Fusagasugá, Cundinamarca">Fusagasugá, Cundinamarca</option>
+              <option value="Medellín" class="bg-zinc-900">Medellín & Antioquia</option>
+              <option value="Cali" class="bg-zinc-900">Cali & Valle</option>
+              <option value="Barranquilla" class="bg-zinc-900">Barranquilla & Atlántico</option>
+              <option value="Cartagena" class="bg-zinc-900">Cartagena & Bolívar</option>
+              <option value="Bucaramanga" class="bg-zinc-900">Bucaramanga & Santander</option>
+              <option value="Pereira" class="bg-zinc-900">Pereira & Risaralda</option>
+              <option value="Manizales" class="bg-zinc-900">Manizales & Caldas</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Correo electrónico</label>
+          <input type="email" id="reg-email" required placeholder="tu.correo@ejemplo.com"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Tipo de ciclismo</label>
+            <select id="reg-type" class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]">
+              <option value="Ruta">Ruta</option>
+              <option value="MTB">MTB</option>
+              <option value="Urbano">Urbano</option>
+              <option value="Recreativo">Recreativo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Nivel</label>
+            <select id="reg-level" class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]">
+              <option value="Principiante">Principiante</option>
+              <option value="Intermedio" selected>Intermedio</option>
+              <option value="Avanzado">Avanzado</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Descripción personal</label>
+          <textarea id="reg-bio" rows="2" placeholder="Me encanta subir a Patios los domingos y rodar seguro en grupo..."
+            class="w-full px-3.5 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-white text-sm focus:outline-none focus:border-[#A3E635]"></textarea>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-sm transition-all shadow-lg">
+          Crear Perfil Ciclista
+        </button>
+      </form>
+
+      <!-- Acceso rápido Modo Demo -->
+      <div class="mt-5 pt-4 border-t border-[#1F2A37] text-center">
+        <button onclick="loginAsDemo()" class="w-full py-2.5 px-4 rounded-xl bg-[#0F3D26]/60 hover:bg-[#0F3D26] border border-[#A3E635]/30 text-[#A3E635] text-xs font-bold transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bolt"></i> Ingresar Directo en Modo Demostración
+        </button>
+        <p class="text-[11px] text-gray-400 mt-2">
+          Arquitectura lista para Supabase • Datos iniciales etiquetados como Modo Demo
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APLICACIÓN PRINCIPAL GO BIKE                                          -->
+  <!-- ===================================================================== -->
+  <div id="app-shell" class="hidden min-h-screen flex flex-col lg:flex-row">
+
+    <!-- BARRA LATERAL DESKTOP (lg:flex) -->
+    <aside class="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 bg-[#131A22] border-r border-[#1F2A37] z-30">
+      <!-- Brand Header -->
+      <div class="p-6 border-b border-[#1F2A37] flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0F3D26] to-[#0A2E1D] border border-[#A3E635]/40 flex items-center justify-center shrink-0">
+          <img src="logobike.png" alt="Logo GO BIKE" class="w-16 h-16 object-contain mx-auto mb-3">
+        </div>
+        <div>
+          <span class="font-display text-2xl font-black tracking-tight text-white">GO <span class="text-[#A3E635]">BIKE</span></span>
+          <p class="text-[10px] text-gray-400 leading-tight">Bogotá & Cundinamarca</p>
+        </div>
+      </div>
+
+      <!-- Menú Principal 5 Secciones -->
+      <nav class="flex-1 p-4 space-y-2">
+        <button onclick="navigate('inicio')" data-nav="inicio" class="nav-btn-desktop w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all bg-[#0A2E1D] text-[#A3E635] border border-[#A3E635]/30">
+          <i class="fa-solid fa-gauge-high w-5 text-center text-base"></i> Inicio
+        </button>
+        <button onclick="navigate('mapa')" data-nav="mapa" class="nav-btn-desktop w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-[#1F2A37]/50 transition-all">
+          <i class="fa-solid fa-map-location-dot w-5 text-center text-base"></i> Mapa de Rutas
+        </button>
+        <button onclick="navigate('comunidad')" data-nav="comunidad" class="nav-btn-desktop w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-[#1F2A37]/50 transition-all">
+          <i class="fa-solid fa-users w-5 text-center text-base"></i> Comunidad
+        </button>
+        <button onclick="navigate('rodadas')" data-nav="rodadas" class="nav-btn-desktop w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-[#1F2A37]/50 transition-all">
+          <i class="fa-solid fa-calendar-check w-5 text-center text-base"></i> Rodadas Grupales
+        </button>
+        <button onclick="navigate('perfil')" data-nav="perfil" class="nav-btn-desktop w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-[#1F2A37]/50 transition-all">
+          <i class="fa-solid fa-user-shield w-5 text-center text-base"></i> Perfil y Seguridad
+        </button>
+      </nav>
+
+      <!-- Botón SOS rápido en Sidebar -->
+      <div class="p-4 border-t border-[#1F2A37] space-y-3">
+        <button onclick="openSOSModal()" class="w-full py-3 px-4 rounded-2xl bg-red-600/20 hover:bg-red-600 border border-red-500/50 text-red-400 hover:text-white font-extrabold text-xs transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation"></i> SOS / Compartir Ubicación
+        </button>
+        <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-[#0D1117] border border-[#1F2A37]">
+          <img id="sidebar-avatar" src="https://placehold.co/80x80/0F3D26/A3E635?text=CB" alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-[#A3E635]" />
+          <div class="min-w-0 flex-1">
+            <p id="sidebar-name" class="text-xs font-bold text-white truncate">Camila Rodríguez</p>
+            <p id="sidebar-city" class="text-[11px] text-gray-400 truncate">Bogotá D.C.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="flex-1 lg:pl-72 flex flex-col min-h-screen pb-24 lg:pb-8">
+
+      <!-- HEADER SUPERIOR (Móvil + Banner Modo Demo) -->
+      <header class="sticky top-0 z-20 bg-[#131A22]/90 backdrop-blur-md border-b border-[#1F2A37] px-4 py-3 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 lg:hidden">
+          <div class="w-9 h-9 rounded-xl bg-[#0A2E1D] border border-[#A3E635]/40 flex items-center justify-center">
+            <i class="fa-solid fa-person-biking text-[#A3E635]"></i>
+          </div>
+          <div>
+            <span class="font-display text-lg font-black text-white">GO <span class="text-[#A3E635]">BIKE</span></span>
+          </div>
+        </div>
+
+        <!-- Banner de transparencia de datos -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-medium">
+          <i class="fa-solid fa-flask"></i>
+          <span>Modo Demo Activo: Rutas y alertas precargadas son datos de demostración</span>
+        </div>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <span id="live-gps-badge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#A3E635]/20 border border-[#A3E635] text-[#A3E635] text-[11px] font-bold">
+            <span class="w-2 h-2 rounded-full bg-[#A3E635] animate-ping"></span> GPS En Vivo
+          </span>
+          <button onclick="openSOSModal()" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md pulse-red">
+            <i class="fa-solid fa-shield-heart"></i> <span class="hidden sm:inline">SOS</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ================================================================= -->
+      <!-- SECCIÓN 1: INICIO (DASHBOARD + GRABADOR GPS + RÉCORDS + RETOS)    -->
+      <!-- ================================================================= -->
+      <main id="section-inicio" class="app-section p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-6">
+        <!-- Saludo y Lema -->
+        <div class="bg-gradient-to-r from-[#0A2E1D] via-[#0F3D26] to-[#131A22] border border-[#A3E635]/30 rounded-3xl p-5 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+          <div>
+            <span class="inline-block px-3 py-1 rounded-full bg-[#A3E635]/15 text-[#A3E635] text-xs font-bold mb-2">
+              <i class="fa-solid fa-mountain-sun mr-1"></i> Bogotá & Cundinamarca
+            </span>
+            <h2 class="font-display text-2xl sm:text-3xl font-black text-white">
+              ¡Hola, <span id="welcome-user-name" class="text-[#A3E635]">Camila</span>!
+            </h2>
+            <p class="text-xs sm:text-sm text-gray-200 mt-1 italic">
+              "Rodamos seguros, conectamos ciclistas, compartimos caminos."
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2.5">
+            <button onclick="navigate('mapa')" class="px-4 py-2.5 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2">
+              <i class="fa-solid fa-map"></i> Explorar Rutas
+            </button>
+            <button onclick="openReportModal()" class="px-4 py-2.5 rounded-xl bg-[#0D1117]/80 hover:bg-[#0D1117] text-white border border-gray-600 font-bold text-xs sm:text-sm transition-all flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Reportar Peligro
+            </button>
+          </div>
+        </div>
+
+        <!-- GRABADOR DE ENTRENAMIENTO GPS EN TIEMPO REAL -->
+        <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-5 sm:p-6 shadow-lg">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-[#0A2E1D] text-[#A3E635] flex items-center justify-center text-lg">
+                <i class="fa-solid fa-satellite-dish"></i>
+              </div>
+              <div>
+                <h3 class="font-display text-lg font-extrabold text-white">Monitor de Entrenamiento GPS</h3>
+                <p class="text-xs text-gray-400">Registra distancia, velocidad, elevación y guarda tu ruta en la comunidad</p>
+              </div>
+            </div>
+            <span id="tracker-status-pill" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-800 text-gray-300 border border-gray-700">
+              Listo para rodar
+            </span>
+          </div>
+
+          <!-- Métricas en vivo -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-5">
+            <div class="bg-[#0D1117] border border-[#1F2A37] rounded-2xl p-4 text-center">
+              <p class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Tiempo</p>
+              <p id="gps-time" class="font-display text-2xl sm:text-3xl font-black text-white mt-1">00:00:00</p>
+            </div>
+            <div class="bg-[#0D1117] border border-[#1F2A37] rounded-2xl p-4 text-center">
+              <p class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Distancia</p>
+              <p class="font-display text-2xl sm:text-3xl font-black text-[#A3E635] mt-1"><span id="gps-distance">0.00</span> <span class="text-xs font-normal text-gray-400">km</span></p>
+            </div>
+            <div class="bg-[#0D1117] border border-[#1F2A37] rounded-2xl p-4 text-center">
+              <p class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Velocidad</p>
+              <p class="font-display text-2xl sm:text-3xl font-black text-white mt-1"><span id="gps-speed">0.0</span> <span class="text-xs font-normal text-gray-400">km/h</span></p>
+            </div>
+            <div class="bg-[#0D1117] border border-[#1F2A37] rounded-2xl p-4 text-center">
+              <p class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Desnivel +</p>
+              <p class="font-display text-2xl sm:text-3xl font-black text-emerald-400 mt-1"><span id="gps-elevation">0</span> <span class="text-xs font-normal text-gray-400">m</span></p>
+            </div>
+          </div>
+
+          <!-- Controles del Grabador -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="fa-solid fa-shield-halved text-[#A3E635]"></i>
+              <span>Compartir ubicación en vivo: <strong id="gps-share-state" class="text-gray-200">Solo bajo autorización</strong></span>
+            </div>
+            <div class="flex flex-wrap gap-2.5">
+              <button id="btn-start-gps" onclick="startRideTracker()" class="px-5 py-2.5 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2">
+                <i class="fa-solid fa-play"></i> Iniciar Entrenamiento
+              </button>
+              <button id="btn-pause-gps" onclick="pauseRideTracker()" class="hidden px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2">
+                <i class="fa-solid fa-pause"></i> Pausar
+              </button>
+              <button id="btn-finish-gps" onclick="finishRideTracker()" class="hidden px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2">
+                <i class="fa-solid fa-flag-checkered"></i> Guardar y Compartir
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Récords Personales y Retos Activos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Récords Personales -->
+          <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-5 sm:p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-display text-lg font-extrabold text-white flex items-center gap-2">
+                <i class="fa-solid fa-trophy text-[#A3E635]"></i> Tus Récords (Bogotá / Cundinamarca)
+              </h3>
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-gray-800 text-gray-400">Demo</span>
+            </div>
+            <div class="space-y-3">
+              <div class="p-3.5 rounded-2xl bg-[#0D1117] border border-[#1F2A37] flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-bold text-white">Ascenso Alto de Patios (La Calera)</p>
+                  <p class="text-xs text-gray-400">6.1 km • Pendiente media 6.8%</p>
+                </div>
+                <div class="text-right">
+                  <span class="font-display text-base font-black text-[#A3E635]">21:45</span>
+                  <p class="text-[11px] text-emerald-400">PR Personal</p>
+                </div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-[#0D1117] border border-[#1F2A37] flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-bold text-white">Subida Alto del Vino (Vía Vega)</p>
+                  <p class="text-xs text-gray-400">29.4 km • Puerto fuera de categoría</p>
+                </div>
+                <div class="text-right">
+                  <span class="font-display text-base font-black text-[#A3E635]">1:38:12</span>
+                  <p class="text-[11px] text-gray-400">Top 15% Club</p>
+                </div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-[#0D1117] border border-[#1F2A37] flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-bold text-white">Fondo Sabana: Chía - Zipaquirá</p>
+                  <p class="text-xs text-gray-400">64.0 km • Terreno llano rápido</p>
+                </div>
+                <div class="text-right">
+                  <span class="font-display text-base font-black text-[#A3E635]">32.4 km/h</span>
+                  <p class="text-[11px] text-gray-400">Vel. Promedio</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Retos Comunitarios Activos -->
+          <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-5 sm:p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-display text-lg font-extrabold text-white flex items-center gap-2">
+                <i class="fa-solid fa-fire text-orange-400"></i> Retos Activos del Mes
+              </h3>
+              <span class="text-xs text-[#A3E635] font-semibold">Noviembre</span>
+            </div>
+            <div class="space-y-4">
+              <div class="p-4 rounded-2xl bg-[#0D1117] border border-[#1F2A37]">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#0A2E1D] text-[#A3E635]">Reto Escarabajo</span>
+                    <h4 class="text-sm font-bold text-white mt-1">3.500m Desnivel en Cundinamarca</h4>
+                  </div>
+                  <span class="text-xs font-extrabold text-[#A3E635]">78%</span>
+                </div>
+                <div class="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-[#0F3D26] to-[#A3E635] rounded-full" style="width: 78%"></div>
+                </div>
+                <p class="text-[11px] text-gray-400 mt-2">2.730 m / 3.500 m completados • 412 ciclistas participando</p>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-[#0D1117] border border-[#1F2A37]">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300">Movilidad Segura</span>
+                    <h4 class="text-sm font-bold text-white mt-1">200 km en Ciclorrutas y Ciclovía</h4>
+                  </div>
+                  <span class="text-xs font-extrabold text-[#A3E635]">92%</span>
+                </div>
+                <div class="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-emerald-600 to-[#A3E635] rounded-full" style="width: 92%"></div>
+                </div>
+                <p class="text-[11px] text-gray-400 mt-2">184 km / 200 km completados • ¡A 16 km de la insignia!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ================================================================= -->
+      <!-- SECCIÓN 2: MAPA DE RUTAS SEGURAS Y ALERTAS COMUNITARIAS           -->
+      <!-- ================================================================= -->
+      <main id="section-mapa" class="app-section hidden p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-5">
+        <!-- Encabezado y controles -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="font-display text-2xl font-black text-white">Mapa de Rutas Seguras</h2>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                Datos de Demostración
+              </span>
+              
+            </div>
+            <p class="text-xs text-gray-400">Bogotá y Cundinamarca • Ciclorrutas, puertos de montaña, talleres y alertas en tiempo real</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="requestUserLocation()" class="px-3.5 py-2.5 rounded-xl bg-[#0A2E1D] hover:bg-[#0F3D26] border border-[#A3E635]/40 text-[#A3E635] text-xs font-bold flex items-center gap-2 transition-all">
+              <i class="fa-solid fa-location-crosshairs"></i> Mi Ubicación (Autorizar)
+            </button>
+
+            <button type="button" onclick="document.getElementById('modal-create-route').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl bg-[#131A22] hover:bg-[#1F2A37] border border-[#A3E635]/50 text-[#A3E635] font-bold text-xs flex items-center gap-2 transition">
+        <i class="fa-solid fa-route"></i> + Compartir Ruta
+      </button>
+
+            <button onclick="openReportModal()" class="px-4 py-2.5 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] text-xs font-extrabold flex items-center gap-2 transition-all shadow-md">
+              <i class="fa-solid fa-plus"></i> Reportar Alerta Vial
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtros de Rutas y Capas del Mapa -->
+        <div class="bg-[#131A22] border border-[#1F2A37] rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Dificultad de Ruta</label>
+            <select id="filter-difficulty" onchange="applyMapFilters()" class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white focus:border-[#A3E635]">
+              <option value="todas">Todas las dificultades</option>
+              <option value="Baja">Baja (Recreativa / Urbana)</option>
+              <option value="Media">Media (Intermedio)</option>
+              <option value="Alta">Alta (Alta Montaña)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-400 mb-1">Distancia Máxima</label>
+            <select id="filter-distance" onchange="applyMapFilters()" class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white focus:border-[#A3E635]">
+              <option value="999">Cualquier distancia</option>
+              <option value="20">Hasta 20 km</option>
+              <option value="45">Hasta 45 km</option>
+              <option value="80">Hasta 80 km</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex flex-wrap items-end gap-2">
+            <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs cursor-pointer">
+              <input type="checkbox" id="layer-routes" checked onchange="applyMapFilters()" class="accent-[#A3E635]" />
+              <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-route mr-1"></i>Rutas</span>
+            </label>
+            <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs cursor-pointer">
+              <input type="checkbox" id="layer-alerts" checked onchange="applyMapFilters()" class="accent-[#A3E635]" />
+              <span class="text-red-400 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Alertas</span>
+            </label>
+            <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs cursor-pointer">
+              <input type="checkbox" id="layer-workshops" checked onchange="applyMapFilters()" class="accent-[#A3E635]" />
+              <span class="text-sky-400 font-semibold"><i class="fa-solid fa-wrench mr-1"></i>Talleres/Asistencia</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Contenedor Mapa + Lista lateral de Rutas y Alertas -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- Mapa Leaflet -->
+          <div class="lg:col-span-2 bg-[#131A22] border border-[#1F2A37] rounded-3xl overflow-hidden shadow-xl relative">
+            <div id="gobike-map" class="w-full h-[420px] sm:h-[520px]"></div>
+            <div class="p-3 bg-[#0D1117] border-t border-[#1F2A37] flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-400">
+              <span><i class="fa-solid fa-circle-info text-[#A3E635] mr-1"></i> Haz clic en el mapa para seleccionar coordenadas al crear un reporte.</span>
+              <span id="selected-coords-display" class="font-mono text-gray-300">Bogotá: 4.6533, -74.0836</span>
+            </div>
+          </div>
+
+          <!-- Panel de Rutas Recomendadas y Alertas Vigentes -->
+          <div class="space-y-4 max-h-[560px] overflow-y-auto pr-1">
+            <!-- Rutas Recomendadas -->
+            <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-4">
+              <h3 class="font-display text-base font-extrabold text-white mb-3 flex items-center justify-between">
+                <span><i class="fa-solid fa-compass text-[#A3E635] mr-1.5"></i> Rutas Destacadas</span>
+                <span class="text-[10px] text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded">Demo</span>
+              </h3>
+              <div id="routes-list-container" class="space-y-2.5">
+                <!-- Renderizado dinámicamente por JS -->
+              </div>
+            </div>
+
+            <!-- Alertas Comunitarias Activas -->
+            <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-4">
+              <h3 class="font-display text-base font-extrabold text-white mb-3 flex items-center justify-between">
+                <span><i class="fa-solid fa-bullhorn text-red-400 mr-1.5"></i> Alertas Comunitarias</span>
+                <span id="alerts-count-badge" class="text-[11px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full font-bold">0</span>
+              </h3>
+              <div id="alerts-list-container" class="space-y-3">
+                <!-- Renderizado dinámicamente por JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ================================================================= -->
+      <!-- SECCIÓN 3: COMUNIDAD (RED SOCIAL + CLASIFICACIÓN SEGMENTOS)       -->
+      <!-- ================================================================= -->
+      <main id="section-comunidad" class="app-section hidden p-4 sm:p-6 max-w-6xl mx-auto w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Columna Principal: Crear Publicación + Muro -->
+          <div class="lg:col-span-2 space-y-5">
+            <!-- Caja para crear nueva publicación -->
+            <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-4 sm:p-5 shadow-lg">
+              <h3 class="font-display text-base font-extrabold text-white mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-[#A3E635]"></i> Comparte tu rodada o experiencia
+              </h3>
+              <form onsubmit="createPost(event)" class="space-y-3">
+                <textarea id="post-content" rows="3" required placeholder="¿Cómo estuvo el ascenso hoy? Comparte consejos, estado de la vía o fotos..."
+                  class="w-full p-3.5 rounded-2xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white focus:outline-none focus:border-[#A3E635]"></textarea>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] text-gray-400 mb-1">Etiquetar Ruta (Opcional)</label>
+                    <select id="post-route-tag" class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white">
+                      <option value="">Sin ruta específica</option>
+                    
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] text-gray-400 mb-1">Agregar Fotografía (Escena Demo)</label>
+                    <select id="post-photo-select" class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white">
+                      <option value="">Solo texto</option>
+                      <option value="https://placehold.co/800x420/0A2E1D/A3E635?text=Amanecer+en+Alto+de+Patios+%E2%80%A2+GO+BIKE">Foto: Amanecer en Alto de Patios</option>
+                      <option value="https://placehold.co/800x420/0F3D26/FFFFFF?text=Peloton+Ciclovia+Bogota+%E2%80%A2+GO+BIKE">Foto: Pelotón Ciclovía Bogotá</option>
+                      <option value="https://placehold.co/800x420/131A22/A3E635?text=Ruta+MTB+La+Calera+%E2%80%A2+GO+BIKE">Foto: Ruta MTB La Calera</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="flex justify-end">
+                  <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Publicar en el Muro
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Feed de Publicaciones -->
+            <div id="social-feed-container" class="space-y-4">
+              <!-- Renderizado dinámico -->
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Clasificación de Segmentos y Ciclistas Sugeridos -->
+          <div class="space-y-5">
+            <!-- Clasificación Segmento -->
+            <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="font-display text-base font-extrabold text-white">
+                  <i class="fa-solid fa-ranking-star text-[#A3E635] mr-1.5"></i> Top Escarabajos
+                </h3>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300">Demo</span>
+              </div>
+              <p class="text-xs text-gray-400 mb-3">Segmento: Peaje Patios - Mirador</p>
+              <div class="space-y-2.5">
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#0D1117] border border-[#A3E635]/30">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-full bg-[#A3E635] text-[#0A2E1D] font-black text-xs flex items-center justify-center">1</span>
+                    <div>
+                      <p class="text-xs font-bold text-white">Andrés Felipe Gómez</p>
+                      <p class="text-[10px] text-gray-400">Bogotá • Ruta</p>
+                    </div>
+                  </div>
+                  <span class="font-mono text-xs font-bold text-[#A3E635]">18:54</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37]">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-full bg-gray-700 text-white font-black text-xs flex items-center justify-center">2</span>
+                    <div>
+                      <p class="text-xs font-bold text-white">Valentina Martínez</p>
+                      <p class="text-[10px] text-gray-400">Chía • Ruta</p>
+                    </div>
+                  </div>
+                  <span class="font-mono text-xs font-bold text-gray-300">20:12</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37]">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-full bg-amber-800 text-amber-200 font-black text-xs flex items-center justify-center">3</span>
+                    <div>
+                      <p class="text-xs font-bold text-white">Camila Rodríguez (Tú)</p>
+                      <p class="text-[10px] text-gray-400">Bogotá • Ruta/MTB</p>
+                    </div>
+                  </div>
+                  <span class="font-mono text-xs font-bold text-gray-300">21:45</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ciclistas para Seguir -->
+            <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-5">
+              <h3 class="font-display text-base font-extrabold text-white mb-3">
+                <i class="fa-solid fa-user-plus text-[#A3E635] mr-1.5"></i> Ciclistas en tu Zona
+              </h3>
+              <div id="suggested-cyclists-container" class="space-y-3">
+                <!-- Renderizado dinámico -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ================================================================= -->
+      <!-- SECCIÓN 4: RODADAS GRUPALES                                       -->
+      <!-- ================================================================= -->
+      <main id="section-rodadas" class="app-section hidden p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-display text-2xl font-black text-white">Rodadas Grupales</h2>
+            <p class="text-xs text-gray-400">Únete a pelotones organizados o crea tu propia salida con punto de encuentro y cupos</p>
+          </div>
+          <button onclick="openCreateRideModal()" class="px-4 py-3 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg">
+            <i class="fa-solid fa-calendar-plus"></i> Organizar Nueva Rodada
+          </button>
+        </div>
+
+        <!-- Grid de Rodadas -->
+        <div id="rides-grid-container" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Renderizado dinámico -->
+        </div>
+      </main>
+
+      <!-- ================================================================= -->
+      <!-- SECCIÓN 5: PERFIL DEL CICLISTA, SEGURIDAD Y SUPABASE              -->
+      <!-- ================================================================= -->
+      <main id="section-perfil" class="app-section hidden p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-6">
+        <!-- Tarjeta de Perfil -->
+        <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl overflow-hidden shadow-xl">
+          <div class="h-28 sm:h-36 bg-gradient-to-r from-[#0A2E1D] via-[#0F3D26] to-[#1F2A37] relative">
+            <span class="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/50 backdrop-blur text-[11px] text-[#A3E635] font-bold border border-[#A3E635]/30">
+              Miembro Verificado GO BIKE
+            </span>
+          </div>
+          <div class="px-5 sm:px-8 pb-6">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between -mt-12 sm:-mt-14 gap-4 mb-4">
+              <div class="flex items-end gap-4">
+              <div class="relative group">
+                <img id="profile-avatar" src="https://placehold.co/120x120/0F3D26/A3E635?text=CR" alt="Foto Perfil" class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-[#131A22] bg-[#0D1117] shadow-lg" />
+                <button onclick="openAvatarEditorModal()" title="Editar Avatar o Foto" class="absolute -bottom-2 -right-2 w-9 h-9 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] flex items-center justify-center shadow-lg border-2 border-[#131A22] transition-all">
+                  <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+              </div>
+              <div class="pb-1">
+                <h2 id="profile-name" class="font-display text-xl sm:text-2xl font-black text-white">Camila Rodríguez</h2>
+                <p id="profile-location" class="text-xs text-gray-300 flex items-center gap-1.5 mt-0.5">
+                  <i class="fa-solid fa-location-dot text-[#A3E635]"></i> Bogotá D.C.
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="openAvatarEditorModal()" class="px-3 py-1.5 rounded-xl bg-[#0A2E1D] hover:bg-[#0F3D26] border border-[#A3E635]/40 text-[#A3E635] text-xs font-bold transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-helmet-safety"></i> Editar Avatar
+              </button>
+              <span id="profile-discipline" class="px-3 py-1.5 rounded-xl bg-[#0A2E1D] border border-[#A3E635]/40 text-[#A3E635] text-xs font-bold">
+                Ciclismo: Ruta
+              </span>
+              <span id="profile-level" class="px-3 py-1.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-gray-200 text-xs font-bold">
+                Nivel: Intermedio
+              </span>
+            </div>
+          </div>
+        </div>
+
+
+
+        
+  <!-- ========================================================================= -->
+<!-- AVATAR CICLISTA DE CUERPO COMPLETO + CAJÓN DE BICICLETA DEBAJO            -->
+<!-- ========================================================================= -->
+<div id="solo-fullbody-cyclist-card" class="bg-[#0D1117]/90 border border-[#1F2A37] rounded-3xl p-5 sm:p-6 space-y-5 mt-4">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1F2A37] pb-4">
+    <div>
+      <h3 class="font-display font-bold text-base sm:text-lg text-white flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#A3E635]"></span>
+        Avatar Ciclista — Cuerpo Completo & Bicicleta
+      </h3>
+      <p class="text-xs text-gray-400 mt-0.5">
+        Personaliza tu equipación completa y el cajón de tu bicicleta debajo del avatar
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        onclick="randomizeSoloCyclist()"
+        class="px-3.5 py-2 rounded-xl bg-[#131A22] hover:bg-[#1F2A37] border border-[#1F2A37] text-xs text-gray-200 font-semibold transition"
+      >
+        🎲 Aleatorio
+      </button>
+      <button
+        type="button"
+        onclick="saveSoloCyclist()"
+        class="px-4 py-2 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] text-xs font-extrabold transition"
+      >
+        Guardar Avatar
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- Columna Izquierda: Cajón Avatar + Cajón Bicicleta Debajo -->
+    <div class="lg:col-span-4 space-y-3">
+      <!-- Cajón 1: Avatar Cuerpo Completo -->
+      <div class="flex flex-col items-center justify-center bg-[#131A22] border border-[#1F2A37] rounded-2xl p-4">
+        <div
+          id="solo-cyclist-svg-box"
+          class="w-36 h-60 flex items-center justify-center"
+        ></div>
+        <div id="solo-cyclist-summary" class="mt-2 text-[11px] font-semibold text-[#A3E635] text-center">
+          Pantalón Largo • Manguitos • Blancas Pro
+        </div>
+      </div>
+
+      <!-- Cajón 2: Tu Bicicleta (Debajo del Avatar) -->
+      <div class="flex flex-col items-center justify-center bg-[#131A22] border border-[#1F2A37] rounded-2xl p-4">
+        <div class="w-full flex items-center justify-between text-[11px] text-gray-400 mb-1">
+          <span class="font-semibold text-gray-300">🚲 Mi Bicicleta</span>
+          <span id="sc-bike-type-badge" class="text-[#A3E635] font-bold uppercase">RUTA</span>
+        </div>
+        <div
+          id="solo-bike-svg-box"
+          class="w-48 h-28 flex items-center justify-center"
+        ></div>
+        <div id="sc-bike-nick-preview" class="mt-1 text-xs font-bold text-white text-center">
+          Sin apodo
+        </div>
+        <div id="sc-bike-color-preview" class="text-[11px] font-semibold text-[#A3E635]">
+          Cuadro Verde Lima
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna Derecha: Controles del Ciclista y de la Bicicleta -->
+    <div class="lg:col-span-8 space-y-4 text-xs">
+      <!-- Controles del Ciclista -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Tono de Piel</label>
+          <select id="sc-skin" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="#F5CBA7">Claro</option>
+            <option value="#E0AC69" selected>Trigueño Claro</option>
+            <option value="#C68642">Canela / Moreno</option>
+            <option value="#8D5524">Oscuro</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Cabello</label>
+          <select id="sc-hair" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="ponytail" selected>Coleta / Cabello Largo</option>
+            <option value="short">Corte Deportivo</option>
+            <option value="bun">Moño Alto</option>
+            <option value="none">Rapado / Bajo Casco</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Expresión</label>
+          <select id="sc-mood" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="smile" selected>Sonriente</option>
+            <option value="focus">Concentrado / Puerto</option>
+            <option value="sprint">Modo Sprint</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Casco</label>
+          <select id="sc-helmet" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="#A3E635" selected>Verde Lima</option>
+            <option value="#F4F4F5">Blanco</option>
+            <option value="#18181B">Negro Carbono</option>
+            <option value="#EF4444">Rojo</option>
+            <option value="#38BDF8">Azul Cielo</option>
+            <option value="#FACC15">Amarillo</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Gafas</label>
+          <select id="sc-glasses" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="#A3E635" selected>Lime</option>
+            <option value="#38BDF8">Azul</option>
+            <option value="#F97316">Naranja</option>
+            <option value="#18181B">Oscuras</option>
+            <option value="none">Sin Gafas</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Manguitos / Mangas</label>
+          <select id="sc-sleeves" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="short" selected>Manga Corta</option>
+            <option value="warmers">Manguitos Térmicos</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Jersey</label>
+          <select id="sc-jersey" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="#0A2E1D" selected>GO BIKE Verde</option>
+            <option value="#18181B">Negro Pro</option>
+            <option value="#EF4444">Rojo</option>
+            <option value="#2563EB">Azul</option>
+            <option value="#FACC15">Amarillo</option>
+            <option value="#F4F4F5">Blanco</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Largo del Pantalón</label>
+          <select id="sc-pants-length" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="short" selected>Corto (Pantaloneta)</option>
+            <option value="long">Largo (Licra / Térmico)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Color del Pantalón</label>
+          <select id="sc-shorts" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="#18181B" selected>Negro</option>
+            <option value="#0F172A">Azul Marino</option>
+            <option value="#27272A">Grafito</option>
+            <option value="#064E3B">Verde Oscuro</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Medias</label>
+          <select id="sc-socks" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="#F4F4F5" selected>Blancas Altas</option>
+            <option value="#A3E635">Verde Lima</option>
+            <option value="#18181B">Negras</option>
+            <option value="#EF4444">Rojas</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Tipo de Zapatilla</label>
+          <select id="sc-shoe-style" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="ruta" selected>Ruta (BOA)</option>
+            <option value="mtb">MTB (Tacos)</option>
+            <option value="gravel">Gravel (Cordones)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Color de Zapatillas</label>
+          <select id="sc-shoes" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+            <option value="#A3E635" selected>Verde Lima</option>
+            <option value="#F4F4F5">Blancas Pro</option>
+            <option value="#18181B">Negras Carbono</option>
+            <option value="#EF4444">Rojas Racing</option>
+            <option value="#38BDF8">Azul Cielo</option>
+            <option value="#F97316">Naranjas</option>
+            <option value="#FACC15">Amarillas</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Controles del Cajón de Bicicleta -->
+      <div class="border-t border-[#1F2A37] pt-3.5 space-y-3">
+        <div class="text-xs font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#A3E635]"></span>
+          Personalización de tu Bicicleta
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Apodo o Modelo</label>
+            <input
+              type="text"
+              id="sc-bike-nick"
+              maxlength="28"
+              oninput="updateSoloCyclist()"
+              placeholder="Ej: La Cabra, Flecha Verde..."
+              class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-3 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none"
+            >
+          </div>
+
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Categoría / Diseño</label>
+            <select id="sc-bike-type" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+              <option value="ruta" selected>Ruta (Aero / Drop bar)</option>
+              <option value="mtb">MTB (Suspensión / Montaña)</option>
+              <option value="gravel">Gravel (Bikepacking / Aventura)</option>
+              <option value="urbana">Urbana (Guardabarros / Ciudad)</option>
+              <option value="enduro">Enduro (Doble Suspensión)</option>
+              <option value="fixie">Fixie / Pista</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Color del Cuadro</label>
+            <select id="sc-bike-frame" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+              <option value="#A3E635" selected>Verde Lima</option>
+              <option value="#10B981">Verde Esmeralda</option>
+              <option value="#14B8A6">Turquesa</option>
+              <option value="#38BDF8">Azul Cielo</option>
+              <option value="#3B82F6">Azul Eléctrico</option>
+              <option value="#A855F7">Morado</option>
+              <option value="#EC4899">Fucsia</option>
+              <option value="#EF4444">Rojo Escarabajo</option>
+              <option value="#F97316">Naranja</option>
+              <option value="#FACC15">Amarillo Tour</option>
+              <option value="#E4E4E7">Blanco Carbono</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Color de Rines</label>
+            <select id="sc-bike-wheel" onchange="updateSoloCyclist()" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+              <option value="#27272A" selected>Negro Mate</option>
+              <option value="#A3E635">Verde Lima</option>
+              <option value="#CBD5E1">Plata / Aluminio</option>
+              <option value="#EF4444">Rojo</option>
+              <option value="#38BDF8">Azul Cielo</option>
+              <option value="#FACC15">Amarillo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Modal Reportar Alerta Comunitaria -->
+  <div id="modal-report" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl w-full max-w-md p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display text-lg font-black text-white flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Reportar Alerta en Vía
+        </h3>
+        <button onclick="closeModal('modal-report')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="submitSafetyReport(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Tipo de Incidente</label>
+          <select id="report-category" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white">
+            <option value="Robos e inseguridad">🚨 Robos e inseguridad</option>
+            <option value="Accidentes">🚑 Accidentes</option>
+            <option value="Huecos y daños">🕳️ Huecos y daños en la vía</option>
+            <option value="Vidrios y obstáculos">⚠️ Vidrios y obstáculos</option>
+            <option value="Obras y cierres">🚧 Obras y cierres</option>
+            <option value="Bicicletas averiadas">🔧 Bicicletas averiadas (Solicitar ayuda)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Ubicación / Sector (Bogotá o Cundinamarca)</label>
+          <input type="text" id="report-location-text" required placeholder="Ej. Ciclorruta Av. Boyacá con Calle 80 / Km 3 Vía La Calera"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Descripción detallada</label>
+          <textarea id="report-desc" rows="3" required placeholder="Describe el peligro para alertar a otros ciclistas..."
+            class="w-full px-3.5 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Vigencia estimada</label>
+            <select id="report-ttl" class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white">
+              <option value="2 horas">2 horas</option>
+              <option value="6 horas" selected>6 horas</option>
+              <option value="24 horas">24 horas</option>
+              <option value="7 días (Obra/Hueco)">7 días (Obra/Hueco)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Coordenadas</label>
+            <input type="text" id="report-coords-input" readonly class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-gray-400 font-mono" />
+          </div>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-sm">
+          Publicar Alerta Comunitaria
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Crear Nueva Rodada Grupal -->
+  <div id="modal-create-ride" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display text-lg font-black text-white flex items-center gap-2">
+          <i class="fa-solid fa-calendar-plus text-[#A3E635]"></i> Organizar Rodada Grupal
+        </h3>
+        <button onclick="closeModal('modal-create-ride')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="createGroupRide(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Título de la Rodada</label>
+          <input type="text" id="ride-title" required placeholder="Ej. Subida Social a Patios + Café"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Fecha</label>
+            <input type="date" id="ride-date" required
+              class="w-full px-3 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Hora de salida</label>
+            <input type="time" id="ride-time" required value="06:00"
+              class="w-full px-3 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Punto de Encuentro</label>
+          <input type="text" id="ride-meeting" required placeholder="Ej. Parque Virrey (Cra 15 con Calle 87), Bogotá"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white" />
+        </div>
+        <div class="grid grid-cols-3 gap-2.5">
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Distancia (km)</label>
+            <input type="number" id="ride-dist" required min="5" max="300" value="32"
+              class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Dificultad</label>
+            <select id="ride-diff" class="w-full px-2.5 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white">
+              <option value="Baja">Baja</option>
+              <option value="Media" selected>Media</option>
+              <option value="Alta">Alta</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Cupos</label>
+            <input type="number" id="ride-spots" required min="2" max="100" value="15"
+              class="w-full px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-sm text-white" />
+          </div>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-sm mt-2">
+          Publicar Rodada Grupal
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal SOS / Compartir Ubicación en Vivo -->
+  <div id="modal-sos" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#131A22] border border-red-500/50 rounded-3xl w-full max-w-md p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-display text-xl font-black text-red-400 flex items-center gap-2">
+          <i class="fa-solid fa-shield-heart"></i> Centro de Seguridad SOS
+        </h3>
+        <button onclick="closeModal('modal-sos')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <p class="text-xs text-gray-300 mb-4">
+        Tu privacidad es prioridad: tu ubicación solo se transmite cuando activas expresamente el enlace de seguimiento para tu rodada o contacto de emergencia.
+      </p>
+      <div class="p-4 rounded-2xl bg-[#0D1117] border border-[#1F2A37] space-y-2 mb-4">
+        <p class="text-xs text-gray-400">Contacto de Emergencia Configurado:</p>
+        <p id="sos-contact-display" class="text-sm font-bold text-white">Carlos Rodríguez • +57 310 555 0192</p>
+        <p class="text-[11px] text-[#A3E635] font-mono" id="sos-live-link">https://gobike.co/live/bogota-segura-8942</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <button onclick="activateLiveShare()" class="py-3 px-4 rounded-xl bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D] font-extrabold text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-share-nodes"></i> Compartir Ruta en Vivo
+        </button>
+        <button onclick="triggerEmergencyAlert()" class="py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bell"></i> Enviar Alerta SOS
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Esquema SQL Supabase -->
+  <div id="modal-sql" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl w-full max-w-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-display text-lg font-black text-white">Esquema Relacional Supabase (PostgreSQL + PostGIS)</h3>
+        <button onclick="closeModal('modal-sql')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <pre id="sql-schema-code" class="flex-1 overflow-auto p-4 rounded-2xl bg-[#0D1117] border border-[#1F2A37] text-[11px] font-mono text-emerald-300 leading-relaxed">-- ESQUEMA BASE DE DATOS GO BIKE (SUPABASE)
+CREATE TABLE usuarios (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  nombre TEXT NOT NULL,
+  ciudad TEXT DEFAULT 'Bogotá D.C.',
+  tipo_ciclismo TEXT CHECK (tipo_ciclismo IN ('Ruta','MTB','Urbano','Recreativo')),
+  nivel TEXT CHECK (nivel IN ('Principiante','Intermedio','Avanzado')),
+  descripcion TEXT,
+  foto_url TEXT,
+  km_totales NUMERIC DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE rutas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  creador_id UUID REFERENCES usuarios(id),
+  nombre TEXT NOT NULL,
+  zona TEXT NOT NULL,
+  distancia_km NUMERIC NOT NULL,
+  desnivel_m INT,
+  dificultad TEXT CHECK (dificultad IN ('Baja','Media','Alta')),
+  coordenadas JSONB NOT NULL,
+  es_demo BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE reportes_seguridad (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID REFERENCES usuarios(id),
+  categoria TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
+  ubicacion_texto TEXT,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  confirmaciones INT DEFAULT 1,
+  expira_en TIMESTAMPTZ NOT NULL,
+  estado TEXT DEFAULT 'activo',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE publicaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID REFERENCES usuarios(id),
+  contenido TEXT NOT NULL,
+  ruta_etiqueta TEXT,
+  likes_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE fotografias (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  publicacion_id UUID REFERENCES publicaciones(id) ON DELETE CASCADE,
+  usuario_id UUID REFERENCES usuarios(id),
+  storage_path TEXT NOT NULL
+);
+
+CREATE TABLE comentarios (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  publicacion_id UUID REFERENCES publicaciones(id) ON DELETE CASCADE,
+  usuario_id UUID REFERENCES usuarios(id),
+  texto TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE seguidores (
+  seguidor_id UUID REFERENCES usuarios(id),
+  seguido_id UUID REFERENCES usuarios(id),
+  PRIMARY KEY (seguidor_id, seguido_id)
+);
+
+CREATE TABLE rodadas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organizador_id UUID REFERENCES usuarios(id),
+  titulo TEXT NOT NULL,
+  fecha DATE NOT NULL,
+  hora TIME NOT NULL,
+  punto_encuentro TEXT NOT NULL,
+  distancia_km NUMERIC NOT NULL,
+  dificultad TEXT NOT NULL,
+  cupos_totales INT NOT NULL
+);
+
+CREATE TABLE inscripciones (
+  rodada_id UUID REFERENCES rodadas(id) ON DELETE CASCADE,
+  usuario_id UUID REFERENCES usuarios(id),
+  PRIMARY KEY (rodada_id, usuario_id)
+);</pre>
+      <div class="mt-3 flex justify-end gap-2">
+        <button onclick="copySQL()" class="px-4 py-2 rounded-xl bg-[#A3E635] text-[#0A2E1D] font-extrabold text-xs">
+          <i class="fa-solid fa-copy mr-1"></i> Copiar SQL
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast / Notificación Flotante (Sin alert() nativo) -->
+  <div id="toast-container" class="fixed top-16 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- ===================================================================== -->
+  <!-- LÓGICA DE APLICACIÓN GO BIKE   SCRIP  
+                                
+  -->
+  <!-- ===================================================================== -->
+
+<script>
+  const bikeGarageData = {
+    nickname: '',
+    type: 'ruta',
+    frameColor: '#A3E635',
+    frameLabel: 'Verde Lima',
+    wheelColor: '#27272A'
+  };
+
+  function drawBikeGarageSVG() {
+    const box = document.getElementById('bike-garage-svg');
+    const nickPreview = document.getElementById('bike-garage-nickname-preview');
+    const metaPreview = document.getElementById('bike-garage-meta-preview');
+    if (!box) return;
+
+    const r = bikeGarageData.type === 'mtb' ? 22 : 20.5;
+    const tireStroke = bikeGarageData.type === 'mtb' ? 4.4 : 3.2;
+    const dropBar = bikeGarageData.type === 'ruta' || bikeGarageData.type === 'gravel';
+
+    const barSvg = dropBar
+      ? `<path d="M111 31 L118 31 C124 31, 126 37, 122 42 L117 44" fill="none" stroke="#E4E4E7" stroke-width="2.6" stroke-linecap="round"/>`
+      : `<path d="M108 31 L122 31" fill="none" stroke="#E4E4E7" stroke-width="3" stroke-linecap="round"/>`;
+
+    const suspSvg = bikeGarageData.type === 'mtb'
+      ? `<line x1="117" y1="45" x2="123" y2="54" stroke="${bikeGarageData.frameColor}" stroke-width="4.2" stroke-linecap="round"/>`
+      : '';
+
+    box.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 96" class="w-full h-full">
+        <ellipse cx="90" cy="90" rx="56" ry="3.5" fill="#000000" fill-opacity="0.45"/>
+        <circle cx="48" cy="66" r="${r}" fill="none" stroke="${bikeGarageData.wheelColor}" stroke-width="${tireStroke}"/>
+        <circle cx="132" cy="66" r="${r}" fill="none" stroke="${bikeGarageData.wheelColor}" stroke-width="${tireStroke}"/>
+        <polyline points="48,66 88,66 74,38 114,36 88,66" fill="none" stroke="${bikeGarageData.frameColor}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+        <line x1="48" y1="66" x2="74" y2="38" stroke="${bikeGarageData.frameColor}" stroke-width="3.2" stroke-linecap="round"/>
+        <line x1="114" y1="36" x2="132" y2="66" stroke="${bikeGarageData.frameColor}" stroke-width="3.8" stroke-linecap="round"/>
+        ${suspSvg}
+        <line x1="74" y1="38" x2="71" y2="31" stroke="#D4D4D8" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M65 30 L80 30 C82 30, 82 33, 79 33 L67 33 C64 33, 64 30, 65 30 Z" fill="#F4F4F5"/>
+        <line x1="114" y1="36" x2="113" y2="31" stroke="#D4D4D8" stroke-width="2.5" stroke-linecap="round"/>
+        ${barSvg}
+        <circle cx="88" cy="66" r="6" fill="#18181B" stroke="#A1A1AA" stroke-width="1.8"/>
+      </svg>
+    `;
+
+    if (nickPreview) {
+      nickPreview.textContent = bikeGarageData.nickname.trim() ? `“${bikeGarageData.nickname.trim()}”` : 'Sin apodo';
+    }
+    if (metaPreview) {
+      metaPreview.textContent = `${bikeGarageData.type.toUpperCase()} • ${bikeGarageData.frameLabel}`;
+    }
+  }
+
+  function updateBikeGarageNickname(val) {
+    bikeGarageData.nickname = val;
+    drawBikeGarageSVG();
+  }
+
+  function updateBikeGarageState() {
+    const typeEl = document.getElementById('bike-garage-type');
+    const wheelEl = document.getElementById('bike-garage-wheel');
+    if (typeEl) bikeGarageData.type = typeEl.value;
+    if (wheelEl) bikeGarageData.wheelColor = wheelEl.value;
+    drawBikeGarageSVG();
+  }
+
+  function setBikeFrameColor(hex, label) {
+    bikeGarageData.frameColor = hex;
+    bikeGarageData.frameLabel = label;
+    drawBikeGarageSVG();
+  }
+
+  function randomBikeGarage() {
+    const types = ['ruta', 'mtb', 'gravel', 'urbana'];
+    const wheels = ['#27272A', '#A3E635', '#CBD5E1'];
+    const frames = [
+      { hex: '#A3E635', label: 'Verde Lima' },
+      { hex: '#10B981', label: 'Verde Bosque' },
+      { hex: '#E4E4E7', label: 'Blanco / Plata' },
+      { hex: '#EF4444', label: 'Rojo' },
+      { hex: '#38BDF8', label: 'Azul' },
+      { hex: '#FACC15', label: 'Amarillo' }
+    ];
+
+    bikeGarageData.type = types[Math.floor(Math.random() * types.length)];
+    bikeGarageData.wheelColor = wheels[Math.floor(Math.random() * wheels.length)];
+    const chosenFrame = frames[Math.floor(Math.random() * frames.length)];
+    bikeGarageData.frameColor = chosenFrame.hex;
+    bikeGarageData.frameLabel = chosenFrame.label;
+
+    const typeEl = document.getElementById('bike-garage-type');
+    const wheelEl = document.getElementById('bike-garage-wheel');
+    if (typeEl) typeEl.value = bikeGarageData.type;
+    if (wheelEl) wheelEl.value = bikeGarageData.wheelColor;
+
+    drawBikeGarageSVG();
+  }
+
+  function saveBikeGarageProfile() {
+    const cleanNick = bikeGarageData.nickname.trim();
+    if (typeof state !== 'undefined' && state.user) {
+      state.user.bikeAvatar = { ...bikeGarageData, nickname: cleanNick };
+    }
+    if (typeof showToast === 'function') {
+      showToast(cleanNick ? `🚲 Bicicleta “${cleanNick}” guardada` : '🚲 Bicicleta guardada en tu perfil');
+    }
+  }
+
+  drawBikeGarageSVG();
+</script>
+
+  <script>
+    // -----------------------------------------------------------------------
+    // 1. ESTADO GLOBAL Y DATOS DE DEMOSTRACIÓN (BOGOTÁ Y CUNDINAMARCA)
+    // -----------------------------------------------------------------------
+    const defaultAvatarConfig = {
+      bg: '#0F3D26',
+      skin: '#E8B99A',
+      helmet: 'aero-lime',
+      glasses: 'panoramic-lime',
+      jersey: 'gobike',
+      hair: 'ponytail'
+    };
+
+    let avatarBuilderState = {
+      reg: { config: { ...defaultAvatarConfig }, customPhotoDataUrl: null },
+      edit: { config: { ...defaultAvatarConfig }, customPhotoDataUrl: null }
+    };
+
+    function generateCyclistAvatarSVG(cfg) {
+      const c = { ...defaultAvatarConfig, ...cfg };
+
+      // 1. Maillot / Jersey
+      let jerseySVG = '';
+      if (c.jersey === 'gobike') {
+        jerseySVG = `
+          <path d="M26 118 C28 96 42 88 60 88 C78 88 92 96 94 118 Z" fill="#0D1117"/>
+          <path d="M40 91 L60 118 L80 91 C74 89 67 88 60 88 C53 88 46 89 40 91 Z" fill="#0F3D26"/>
+          <path d="M32 103 L88 103 L90 109 L30 109 Z" fill="#A3E635"/>
+          <line x1="60" y1="88" x2="60" y2="118" stroke="#A3E635" stroke-width="2"/>
+        `;
+      } else if (c.jersey === 'polkadot') {
+        jerseySVG = `
+          <path d="M26 118 C28 96 42 88 60 88 C78 88 92 96 94 118 Z" fill="#FFFFFF"/>
+          <circle cx="44" cy="99" r="3.2" fill="#EF4444"/>
+          <circle cx="60" cy="95" r="3.2" fill="#EF4444"/>
+          <circle cx="76" cy="99" r="3.2" fill="#EF4444"/>
+          <circle cx="38" cy="111" r="3.2" fill="#EF4444"/>
+          <circle cx="53" cy="109" r="3.2" fill="#EF4444"/>
+          <circle cx="68" cy="109" r="3.2" fill="#EF4444"/>
+          <circle cx="82" cy="111" r="3.2" fill="#EF4444"/>
+          <line x1="60" y1="88" x2="60" y2="118" stroke="#E5E7EB" stroke-width="1.8"/>
+        `;
+      } else if (c.jersey === 'colombia') {
+        jerseySVG = `
+          <path d="M26 118 C28 96 42 88 60 88 C78 88 92 96 94 118 Z" fill="#FACC15"/>
+          <path d="M29 105 L91 105 L93 111 L27 111 Z" fill="#1D4ED8"/>
+          <path d="M27 111 L93 111 L94 118 L26 118 Z" fill="#DC2626"/>
+          <line x1="60" y1="88" x2="60" y2="118" stroke="#0D1117" stroke-width="1.5"/>
+        `;
+      } else if (c.jersey === 'neon') {
+        jerseySVG = `
+          <path d="M26 118 C28 96 42 88 60 88 C78 88 92 96 94 118 Z" fill="#BEF264"/>
+          <path d="M28 106 L92 106 L93 111 L27 111 Z" fill="#0F172A"/>
+          <line x1="60" y1="88" x2="60" y2="118" stroke="#0F172A" stroke-width="2"/>
+        `;
+      } else {
+        jerseySVG = `
+          <path d="M26 118 C28 96 42 88 60 88 C78 88 92 96 94 118 Z" fill="#18181B"/>
+          <path d="M35 95 L85 95" stroke="#52525B" stroke-width="2"/>
+          <line x1="60" y1="88" x2="60" y2="118" stroke="#3F3F46" stroke-width="2"/>
+        `;
+      }
+
+      // 2. Cabello trasero (coleta)
+      const backHairSVG = c.hair === 'ponytail'
+        ? `<path d="M77 56 C92 58 96 74 88 86 C83 78 80 70 76 66 Z" fill="#1F1916"/>`
+        : '';
+
+      // 3. Cabello frontal y barba
+      let frontHairSVG = '';
+      if (c.hair === 'short-dark' || c.hair === 'beard-short') {
+        frontHairSVG += `<path d="M38 52 C38 44 43 42 46 46 L42 56 Z M82 52 C82 44 77 42 74 46 L78 56 Z" fill="#1F1916"/>`;
+      } else if (c.hair === 'ponytail') {
+        frontHairSVG += `<path d="M38 51 C37 60 39 72 42 78 L44 56 Z M82 51 C83 60 81 72 78 78 L76 56 Z" fill="#1F1916"/>`;
+      }
+
+      let beardSVG = '';
+      if (c.hair === 'beard-short') {
+        beardSVG = `<path d="M41 64 C41 78 50 84 60 84 C70 84 79 78 79 64 L76 64 C75 73 68 78 60 78 C52 78 45 73 44 64 Z" fill="#1F1916" opacity="0.88"/>`;
+      } else if (c.hair === 'beard-full') {
+        beardSVG = `<path d="M40 62 C39 80 49 87 60 87 C71 87 81 80 80 62 L75 63 C74 72 68 76 60 76 C52 76 46 72 45 63 Z" fill="#1F1916"/>`;
+      }
+
+      // 4. Casco o gorra ciclista
+      let helmetSVG = '';
+      if (c.helmet === 'aero-lime') {
+        helmetSVG = `
+          <path d="M34 48 C34 26 46 18 60 18 C74 18 86 26 86 48 C76 44 44 44 34 48 Z" fill="#A3E635" stroke="#0A2E1D" stroke-width="2"/>
+          <path d="M46 23 L43 39 M60 20 L60 38 M74 23 L77 39" stroke="#0A2E1D" stroke-width="3" stroke-linecap="round"/>
+          <path d="M42 66 L47 84 M78 66 L73 84" stroke="#1F2937" stroke-width="2.2"/>
+        `;
+      } else if (c.helmet === 'aero-white') {
+        helmetSVG = `
+          <path d="M34 48 C34 26 46 18 60 18 C74 18 86 26 86 48 C76 44 44 44 34 48 Z" fill="#F9FAFB" stroke="#1F2937" stroke-width="2"/>
+          <path d="M46 23 L43 39 M60 20 L60 38 M74 23 L77 39" stroke="#0F3D26" stroke-width="3" stroke-linecap="round"/>
+          <path d="M42 66 L47 84 M78 66 L73 84" stroke="#374151" stroke-width="2.2"/>
+        `;
+      } else if (c.helmet === 'mtb-visor') {
+        helmetSVG = `
+          <path d="M33 49 C33 25 45 17 60 17 C75 17 87 25 87 49 Z" fill="#0F3D26" stroke="#A3E635" stroke-width="2"/>
+          <path d="M31 46 L89 46 L83 40 L37 40 Z" fill="#111827"/>
+          <path d="M42 66 L47 84 M78 66 L73 84" stroke="#1F2937" stroke-width="2.2"/>
+        `;
+      } else if (c.helmet === 'urban-black') {
+        helmetSVG = `
+          <path d="M35 49 C35 27 46 19 60 19 C74 19 85 27 85 49 C74 46 46 46 35 49 Z" fill="#18181B" stroke="#A3E635" stroke-width="1.8"/>
+          <circle cx="50" cy="31" r="2.5" fill="#A3E635"/>
+          <circle cx="60" cy="29" r="2.5" fill="#A3E635"/>
+          <circle cx="70" cy="31" r="2.5" fill="#A3E635"/>
+          <path d="M42 66 L47 84 M78 66 L73 84" stroke="#27272A" stroke-width="2.2"/>
+        `;
+      } else {
+        // Gorra ciclista clásica
+        helmetSVG = `
+          <path d="M37 47 C37 31 47 23 60 23 C73 23 83 31 83 47 Z" fill="#0A2E1D"/>
+          <path d="M56 23 L64 23 L64 46 L56 46 Z" fill="#A3E635"/>
+          <path d="M36 47 C46 43 74 43 84 47 C74 51 46 51 36 47 Z" fill="#111827"/>
+        `;
+      }
+
+      // 5. Gafas deportivas
+      let glassesSVG = '';
+      if (c.glasses === 'panoramic-lime') {
+        glassesSVG = `
+          <path d="M38 52 L82 52 L80 63 C72 65 65 63 60 59 C55 63 48 65 40 63 Z" fill="#A3E635" fill-opacity="0.88" stroke="#0A2E1D" stroke-width="2"/>
+          <path d="M43 54 L53 61" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+        `;
+      } else if (c.glasses === 'photochromic') {
+        glassesSVG = `
+          <path d="M38 52 L82 52 L80 63 C72 65 65 63 60 59 C55 63 48 65 40 63 Z" fill="#0F172A" fill-opacity="0.94" stroke="#A3E635" stroke-width="1.8"/>
+          <path d="M44 54 L55 61" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+        `;
+      } else if (c.glasses === 'classic') {
+        glassesSVG = `
+          <rect x="40" y="52" width="17" height="10" rx="3" fill="#1E293B" stroke="#FFFFFF" stroke-width="1.8"/>
+          <rect x="63" y="52" width="17" height="10" rx="3" fill="#1E293B" stroke="#FFFFFF" stroke-width="1.8"/>
+          <line x1="57" y1="55" x2="63" y2="55" stroke="#FFFFFF" stroke-width="2"/>
+        `;
+      } else {
+        // Sin gafas: ojos expresivos
+        glassesSVG = `
+          <circle cx="50" cy="56" r="2.4" fill="#1F2937"/>
+          <circle cx="70" cy="56" r="2.4" fill="#1F2937"/>
+          <path d="M46 51 Q50 49 54 51 M66 51 Q70 49 74 51" stroke="#1F2937" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        `;
+      }
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+        <rect width="120" height="120" fill="${c.bg}"/>
+        <circle cx="60" cy="60" r="54" fill="#FFFFFF" fill-opacity="0.06"/>
+        ${backHairSVG}
+        ${jerseySVG}
+        <!-- Cuello -->
+        <rect x="52" y="75" width="16" height="16" rx="6" fill="${c.skin}"/>
+        <!-- Cabeza -->
+        <path d="M40 48 C40 34 80 34 80 48 L80 62 C80 76 70 83 60 83 C50 83 40 76 40 62 Z" fill="${c.skin}"/>
+        ${frontHairSVG}
+        ${beardSVG}
+        <!-- Sonrisa ciclista -->
+        <path d="M54 71 Q60 75 66 71" stroke="#7C2D12" stroke-width="2" fill="none" stroke-linecap="round"/>
+        ${glassesSVG}
+        ${helmetSVG}
+      </svg>`;
+    }
+
+    function svgToDataUrl(svgString) {
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString.trim());
+    }
+
+    function renderAvatarBuilderPreview(mode) {
+      const container = document.getElementById(`${mode}-avatar-preview`);
+      if (!container) return;
+      const state = avatarBuilderState[mode];
+      if (state.customPhotoDataUrl) {
+        container.innerHTML = `<img src="${state.customPhotoDataUrl}" alt="Avatar subido" class="w-full h-full object-cover" />`;
+      } else {
+        container.innerHTML = generateCyclistAvatarSVG(state.config);
+      }
+    }
+
+    function updateAvatarFromUI(mode) {
+      avatarBuilderState[mode].customPhotoDataUrl = null;
+      avatarBuilderState[mode].config = {
+        bg: document.getElementById(`${mode}-av-bg`).value,
+        skin: document.getElementById(`${mode}-av-skin`).value,
+        helmet: document.getElementById(`${mode}-av-helmet`).value,
+        glasses: document.getElementById(`${mode}-av-glasses`).value,
+        jersey: document.getElementById(`${mode}-av-jersey`).value,
+        hair: document.getElementById(`${mode}-av-hair`).value
+      };
+      renderAvatarBuilderPreview(mode);
+    }
+
+    function randomizeAvatar(mode) {
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      const cfg = {
+        bg: pick(['#A3E635', '#0F3D26', '#111827', '#0369A1', '#EA580C']),
+        skin: pick(['#FDE2D2', '#E8B99A', '#C68B63', '#8D5524', '#523118']),
+        helmet: pick(['aero-lime', 'aero-white', 'mtb-visor', 'urban-black', 'cap-cycling']),
+        glasses: pick(['panoramic-lime', 'photochromic', 'classic', 'none']),
+        jersey: pick(['gobike', 'polkadot', 'colombia', 'black', 'neon']),
+        hair: pick(['short-dark', 'ponytail', 'beard-short', 'beard-full', 'clean'])
+      };
+      avatarBuilderState[mode].customPhotoDataUrl = null;
+      avatarBuilderState[mode].config = cfg;
+
+      document.getElementById(`${mode}-av-bg`).value = cfg.bg;
+      document.getElementById(`${mode}-av-skin`).value = cfg.skin;
+      document.getElementById(`${mode}-av-helmet`).value = cfg.helmet;
+      document.getElementById(`${mode}-av-glasses`).value = cfg.glasses;
+      document.getElementById(`${mode}-av-jersey`).value = cfg.jersey;
+      document.getElementById(`${mode}-av-hair`).value = cfg.hair;
+
+      renderAvatarBuilderPreview(mode);
+    }
+
+    function handleAvatarPhotoUpload(event, mode) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        avatarBuilderState[mode].customPhotoDataUrl = e.target.result;
+        renderAvatarBuilderPreview(mode);
+        showToast('Fotografía cargada en la vista previa del perfil', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function getAvatarFinalUrl(mode) {
+      const state = avatarBuilderState[mode];
+      if (state.customPhotoDataUrl) return state.customPhotoDataUrl;
+      return svgToDataUrl(generateCyclistAvatarSVG(state.config));
+    }
+
+    function openAvatarEditorModal() {
+      if (currentUser && currentUser.avatarConfig) {
+        avatarBuilderState.edit.config = { ...currentUser.avatarConfig };
+        avatarBuilderState.edit.customPhotoDataUrl = null;
+      } else if (currentUser && currentUser.avatar && !currentUser.avatar.startsWith('data:image/svg+xml')) {
+        avatarBuilderState.edit.customPhotoDataUrl = currentUser.avatar;
+      }
+      const cfg = avatarBuilderState.edit.config;
+      document.getElementById('edit-av-bg').value = cfg.bg;
+      document.getElementById('edit-av-skin').value = cfg.skin;
+      document.getElementById('edit-av-helmet').value = cfg.helmet;
+      document.getElementById('edit-av-glasses').value = cfg.glasses;
+      document.getElementById('edit-av-jersey').value = cfg.jersey;
+      document.getElementById('edit-av-hair').value = cfg.hair;
+      renderAvatarBuilderPreview('edit');
+      document.getElementById('modal-avatar-editor').classList.remove('hidden');
+    }
+
+    function saveEditedAvatar() {
+      if (!currentUser) return;
+      const newAvatarUrl = getAvatarFinalUrl('edit');
+      const oldName = currentUser.name;
+
+      currentUser.avatar = newAvatarUrl;
+      currentUser.avatarConfig = avatarBuilderState.edit.customPhotoDataUrl
+        ? null
+        : { ...avatarBuilderState.edit.config };
+
+      // Actualizar también en las publicaciones del usuario en el muro
+      socialPosts.forEach(p => {
+        if (p.author === oldName) p.avatar = newAvatarUrl;
+      });
+
+      localStorage.setItem('gobike_user', JSON.stringify(currentUser));
+      updateUserUI();
+      renderSocialFeed();
+      closeModal('modal-avatar-editor');
+      showToast('¡Tu nuevo avatar ciclista se ha actualizado en toda la app!', 'success');
+    }
+
+    const defaultUser = {
+      name: 'Camila Rodríguez',
+      email: 'camila.rodriguez@gobike.co',
+      city: 'Bogotá D.C.',
+      type: 'Ruta',
+      level: 'Intermedio',
+      bio: 'Apasionada por los puertos de Cundinamarca y la movilidad sostenible en Bogotá. Siempre lista para rodar en grupo con seguridad.',
+      avatarConfig: { ...defaultAvatarConfig },
+      avatar: svgToDataUrl(generateCyclistAvatarSVG(defaultAvatarConfig)),
+      km: 1482,
+      ridesCount: 34,
+      followers: 128,
+      following: 94,
+      locationAuthorized: false,
+      emergencyName: 'Carlos Rodríguez (Hermano)',
+      emergencyPhone: '+57 310 555 0192'
+    };
+
+    // Rutas emblemáticas de demostración en Bogotá y Cundinamarca
+    const demoRoutes = [
+      {
+        id: 'r1',
+        name: 'Alto de Patios (Vía La Calera)',
+        zone: 'Chapinero - La Calera',
+        distance: 6.1,
+        elevation: 440,
+        difficulty: 'Alta',
+        type: 'Ruta / MTB',
+        isDemo: true,
+        coords: [
+          [4.6642, -74.0518],
+          [4.6665, -74.0445],
+          [4.6698, -74.0360],
+          [4.6725, -74.0265]
+        ]
+      },
+      {
+        id: 'r2',
+        name: 'Ciclovía Dominical Carrera 7ma',
+        zone: 'Parque Nacional - Usaquén',
+        distance: 14.5,
+        elevation: 85,
+        difficulty: 'Baja',
+        type: 'Urbano / Recreativo',
+        isDemo: true,
+        coords: [
+          [4.6231, -74.0654],
+          [4.6480, -74.0592],
+          [4.6765, -74.0488],
+          [4.6962, -74.0321]
+        ]
+      },
+      {
+        id: 'r3',
+        name: 'Circuito Sabana: Chía - Tabio - Tenjo',
+        zone: 'Sabana Centro, Cundinamarca',
+        distance: 42.0,
+        elevation: 310,
+        difficulty: 'Media',
+        type: 'Ruta',
+        isDemo: true,
+        coords: [
+          [4.8615, -74.0585],
+          [4.9168, -74.0942],
+          [4.8722, -74.1445],
+          [4.8615, -74.0585]
+        ]
+      },
+      {
+        id: 'r4',
+        name: 'Ascenso Alto del Vino (Vía La Vega)',
+        zone: 'Siberia - Alto del Vino',
+        distance: 29.4,
+        elevation: 1420,
+        difficulty: 'Alta',
+        type: 'Ruta',
+        isDemo: true,
+        coords: [
+          [4.7562, -74.1620],
+          [4.7890, -74.2150],
+          [4.8210, -74.2680],
+          [4.8455, -74.3012]
+        ]
+      }
+    ];
+
+    // Puntos de taller y asistencia técnica (Demo)
+    const demoWorkshops = [
+      { name: 'Punto Asistencia Patios Km 1 (Demo)', lat: 4.6648, lng: -74.0502, hours: 'Sáb-Dom 5:30 AM - 12:00 PM' },
+      { name: 'Taller BiciSegura Parque Virrey (Demo)', lat: 4.6732, lng: -74.0568, hours: 'Lun-Dom 7:00 AM - 7:00 PM' },
+      { name: 'Estación Mecánica Puente Guadua (Demo)', lat: 4.7285, lng: -74.1275, hours: 'Sáb-Dom 6:00 AM - 1:00 PM' },
+      { name: 'Centro Ciclista Chía Parque Principal (Demo)', lat: 4.8619, lng: -74.0588, hours: 'Todos los días 6:30 AM - 6:00 PM' }
+    ];
+
+    // Alertas comunitarias precargadas (Claramente marcadas como Demo)
+    let safetyReports = [
+      {
+        id: 'rep1',
+        category: 'Huecos y daños',
+        location: 'Ciclorruta Av. El Dorado con Cra 68 (Dato Demo)',
+        description: 'Bache profundo en carril sentido occidente-oriente. Reducir velocidad.',
+        lat: 4.6585,
+        lng: -74.1062,
+        author: 'Andrés Gómez',
+        time: 'Hace 35 min',
+        ttl: '7 días',
+        confirmations: 9,
+        confirmedByMe: false,
+        isDemo: true
+      },
+      {
+        id: 'rep2',
+        category: 'Vidrios y obstáculos',
+        location: 'Vía La Calera Km 4.2 antes del Mirador (Dato Demo)',
+        description: 'Gravilla suelta y vidrios sobre la berma derecha en curva cerrada.',
+        lat: 4.6702,
+        lng: -74.0345,
+        author: 'Valentina Martínez',
+        time: 'Hace 1 hora',
+        ttl: '6 horas',
+        confirmaciones: 14,
+        confirmations: 14,
+        confirmedByMe: false,
+        isDemo: true
+      },
+      {
+        id: 'rep3',
+        category: 'Obras y cierres',
+        location: 'Autopista Norte Calle 170 costado oriental (Dato Demo)',
+        description: 'Desvío peatonal y ciclista por mantenimiento de losas.',
+        lat: 4.7532,
+        lng: -74.0465,
+        author: 'Mateo Díaz',
+        time: 'Hace 2 horas',
+        ttl: '24 horas',
+        confirmations: 6,
+        confirmedByMe: false,
+        isDemo: true
+      }
+    ];
+
+    // Publicaciones sociales iniciales (Demo)
+    let socialPosts = [
+      {
+        id: 'p1',
+        author: 'Andrés Felipe Gómez',
+        city: 'Bogotá D.C.',
+        badge: 'Ruta • Avanzado',
+        avatar: 'https://placehold.co/80x80/0A2E1D/A3E635?text=AG',
+        time: 'Hace 42 min • Demo',
+        content: '¡Increíble mañana subiendo a Patios! El clima estuvo despejado y vimos mucha presencia de ciclistas respetando las normas. Recuerden bajar con precaución en el km 4.',
+        routeTag: 'Alto de Patios • 6.1 km',
+        photo: 'https://placehold.co/800x420/0A2E1D/A3E635?text=Amanecer+en+Alto+de+Patios+%E2%80%A2+GO+BIKE',
+        likes: 24,
+        liked: false,
+        comments: [
+          { user: 'Valentina Martínez', text: '¡Excelente tiempo! Mañana nos vemos en el Virrey.' }
+        ]
+      },
+      {
+        id: 'p2',
+        author: 'Valentina Martínez',
+        city: 'Chía, Cundinamarca',
+        badge: 'MTB • Intermedio',
+        avatar: 'https://placehold.co/80x80/0F3D26/FFFFFF?text=VM',
+        time: 'Hace 3 horas • Demo',
+        content: 'Rodada suave por los caminos veredales entre Chía y Tabio. La comunidad GO BIKE cada vez más unida cuidándonos entre todos.',
+        routeTag: 'Sabana Chía - Tabio • 38 km',
+        photo: '',
+        likes: 18,
+        liked: true,
+        comments: []
+      }
+    ];
+
+    // Ciclistas sugeridos
+    let suggestedCyclists = [
+      { id: 'u1', name: 'Andrés Felipe Gómez', city: 'Bogotá D.C.', discipline: 'Ruta', followed: true },
+      { id: 'u2', name: 'Valentina Martínez', city: 'Chía', discipline: 'MTB', followed: false },
+      { id: 'u3', name: 'Julián Torres', city: 'Zipaquirá', discipline: 'Urbano', followed: false }
+    ];
+
+    // Rodadas grupales iniciales (Demo)
+    let groupRides = [
+      {
+        id: 'gr1',
+        title: 'Madrugón Seguro Alto de Patios (Demo)',
+        organizer: 'Camila Rodríguez',
+        date: '2026-11-22',
+        time: '05:45',
+        meetingPoint: 'Parque El Virrey (Cra 15 # 87), Bogotá',
+        distance: 24,
+        difficulty: 'Media',
+        totalSpots: 20,
+        participants: ['Camila Rodríguez', 'Andrés Felipe Gómez', 'Valentina Martínez', 'Julián Torres'],
+        joined: true
+      },
+      {
+        id: 'gr2',
+        title: 'Fondo Sabana Norte: Bogotá - Zipaquirá (Demo)',
+        organizer: 'Andrés Felipe Gómez',
+        date: '2026-11-23',
+        time: '06:15',
+        meetingPoint: 'Estación Portal Norte - Ciclorruta, Bogotá',
+        distance: 78,
+        difficulty: 'Alta',
+        totalSpots: 15,
+        participants: ['Andrés Felipe Gómez', 'Mateo Díaz', 'Laura Sánchez'],
+        joined: false
+      },
+      {
+        id: 'gr3',
+        title: 'Ciclovía Familiar y Recreativa Séptima (Demo)',
+        organizer: 'Julián Torres',
+        date: '2026-11-23',
+        time: '08:30',
+        meetingPoint: 'Parque Nacional (Cra 7 # 36), Bogotá',
+        distance: 18,
+        difficulty: 'Baja',
+        totalSpots: 30,
+        participants: ['Julián Torres', 'Sofía Castro'],
+        joined: false
+      }
+    ];
+
+    let currentUser = null;
+    let mapInstance = null;
+    let mapLayersGroup = null;
+    let userLocationMarker = null;
+    let selectedMapCoords = { lat: 4.6642, lng: -74.0518 };
+
+    // Variables del grabador GPS
+    let trackerInterval = null;
+    let trackerSeconds = 0;
+    let trackerDistance = 0;
+    let trackerElevation = 0;
+    let trackerRunning = false;
+
+    // -----------------------------------------------------------------------
+    // 2. AUTENTICACIÓN Y GESTIÓN DE SESIÓN
+    // -----------------------------------------------------------------------
+    function switchAuthTab(tab) {
+      const loginForm = document.getElementById('form-login');
+      const regForm = document.getElementById('form-register');
+      const tabLogin = document.getElementById('tab-login');
+      const tabReg = document.getElementById('tab-register');
+
+      if (tab === 'login') {
+        loginForm.classList.remove('hidden');
+        regForm.classList.add('hidden');
+        tabLogin.className = 'py-2.5 text-sm font-bold rounded-xl bg-[#A3E635] text-[#0A2E1D] transition-all';
+        tabReg.className = 'py-2.5 text-sm font-bold rounded-xl text-gray-400 hover:text-white transition-all';
+      } else {
+        loginForm.classList.add('hidden');
+        regForm.classList.remove('hidden');
+        tabReg.className = 'py-2.5 text-sm font-bold rounded-xl bg-[#A3E635] text-[#0A2E1D] transition-all';
+        tabLogin.className = 'py-2.5 text-sm font-bold rounded-xl text-gray-400 hover:text-white transition-all';
+        renderAvatarBuilderPreview('reg');
+      }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const saved = localStorage.getItem('gobike_user');
+      if (saved) {
+        currentUser = JSON.parse(saved);
+        currentUser.email = email;
+      } else {
+        currentUser = { ...defaultUser, email };
+      }
+      enterApp();
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const city = document.getElementById('reg-city').value;
+      const email = document.getElementById('reg-email').value.trim();
+      const type = document.getElementById('reg-type').value;
+      const level = document.getElementById('reg-level').value;
+      const bio = document.getElementById('reg-bio').value.trim() || 'Ciclista activo de la comunidad GO BIKE.';
+      const avatarUrl = getAvatarFinalUrl('reg');
+
+      currentUser = {
+        name,
+        email,
+        city,
+        type,
+        level,
+        bio,
+        avatarConfig: avatarBuilderState.reg.customPhotoDataUrl ? null : { ...avatarBuilderState.reg.config },
+        avatar: avatarUrl,
+        km: 0,
+        ridesCount: 0,
+        followers: 1,
+        following: 1,
+        locationAuthorized: false,
+        emergencyName: 'Contacto de Emergencia',
+        emergencyPhone: '+57 300 000 0000'
+      };
+      localStorage.setItem('gobike_user', JSON.stringify(currentUser));
+      showToast(`¡Bienvenido a GO BIKE, ${name}!`, 'success');
+      enterApp();
+    }
+
+    function loginAsDemo() {
+      currentUser = { ...defaultUser };
+      localStorage.setItem('gobike_user', JSON.stringify(currentUser));
+      showToast('Ingresaste en Modo Demostración GO BIKE', 'info');
+      enterApp();
+    }
+
+    function enterApp() {
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+      updateUserUI();
+      renderSocialFeed();
+      renderSuggestedCyclists();
+      renderGroupRides();
+      navigate('inicio');
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById('app-shell').classList.add('hidden');
+      document.getElementById('auth-screen').classList.remove('hidden');
+      showToast('Sesión cerrada correctamente', 'info');
+    }
+
+    function updateUserUI() {
+      if (!currentUser) return;
+      document.getElementById('welcome-user-name').textContent = currentUser.name.split(' ')[0];
+      document.getElementById('sidebar-name').textContent = currentUser.name;
+      document.getElementById('sidebar-city').textContent = currentUser.city;
+      document.getElementById('sidebar-avatar').src = currentUser.avatar;
+
+      document.getElementById('profile-avatar').src = currentUser.avatar;
+      document.getElementById('profile-name').textContent = currentUser.name;
+      document.getElementById('profile-location').innerHTML = `<i class="fa-solid fa-location-dot text-[#A3E635]"></i> ${currentUser.city}`;
+      document.getElementById('profile-discipline').textContent = `Ciclismo: ${currentUser.type}`;
+      document.getElementById('profile-level').textContent = `Nivel: ${currentUser.level}`;
+      document.getElementById('profile-bio').textContent = currentUser.bio;
+
+      document.getElementById('stat-km').textContent = currentUser.km.toLocaleString('es-CO');
+      document.getElementById('stat-rides').textContent = currentUser.ridesCount;
+      document.getElementById('stat-posts').textContent = socialPosts.filter(p => p.author === currentUser.name).length || 12;
+      document.getElementById('stat-followers').textContent = currentUser.followers;
+      document.getElementById('stat-following').textContent = currentUser.following;
+
+      document.getElementById('toggle-location-auth').checked = !!currentUser.locationAuthorized;
+      document.getElementById('emergency-name').value = currentUser.emergencyName || '';
+      document.getElementById('emergency-phone').value = currentUser.emergencyPhone || '';
+      document.getElementById('sos-contact-display').textContent = `${currentUser.emergencyName} • ${currentUser.emergencyPhone}`;
+    }
+
+    // -----------------------------------------------------------------------
+    // 3. NAVEGACIÓN ENTRE LAS 5 SECCIONES
+    // -----------------------------------------------------------------------
+    function navigate(sectionId) {
+      document.querySelectorAll('.app-section').forEach(sec => sec.classList.add('hidden'));
+      const target = document.getElementById(`section-${sectionId}`);
+      if (target) target.classList.remove('hidden');
+
+      // Actualizar botones escritorio
+      document.querySelectorAll('.nav-btn-desktop').forEach(btn => {
+        if (btn.dataset.nav === sectionId) {
+          btn.className = 'nav-btn-desktop w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all bg-[#0A2E1D] text-[#A3E635] border border-[#A3E635]/30';
+        } else {
+          btn.className = 'nav-btn-desktop w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-[#1F2A37]/50 transition-all';
+        }
+      });
+
+      // Actualizar botones móvil
+      document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+        if (btn.dataset.nav === sectionId) {
+          btn.className = 'nav-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-xl text-[#A3E635] bg-[#0A2E1D]/60';
+        } else {
+          btn.className = 'nav-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-xl text-gray-400';
+        }
+      });
+
+      // Inicializar o redimensionar mapa al entrar a sección Mapa
+      if (sectionId === 'mapa') {
+        setTimeout(() => {
+          initMap();
+          if (mapInstance) mapInstance.invalidateSize();
+        }, 100);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // 4. GRABADOR DE ENTRENAMIENTO GPS EN TIEMPO REAL
+    // -----------------------------------------------------------------------
+    function startRideTracker() {
+      if (trackerRunning) return;
+      trackerRunning = true;
+      document.getElementById('btn-start-gps').classList.add('hidden');
+      document.getElementById('btn-pause-gps').classList.remove('hidden');
+      document.getElementById('btn-finish-gps').classList.remove('hidden');
+
+      const pill = document.getElementById('tracker-status-pill');
+      pill.textContent = 'Grabando ruta en vivo...';
+      pill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-[#A3E635]/20 text-[#A3E635] border border-[#A3E635]';
+
+      trackerInterval = setInterval(() => {
+        trackerSeconds++;
+        const simulatedSpeed = (22 + Math.random() * 8).toFixed(1); // 22-30 km/h
+        trackerDistance += parseFloat(simulatedSpeed) / 3600;
+        if (trackerSeconds % 3 === 0) trackerElevation += 1;
+
+        const hrs = String(Math.floor(trackerSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((trackerSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(trackerSeconds % 60).padStart(2, '0');
+
+        document.getElementById('gps-time').textContent = `${hrs}:${mins}:${secs}`;
+        document.getElementById('gps-distance').textContent = trackerDistance.toFixed(2);
+        document.getElementById('gps-speed').textContent = simulatedSpeed;
+        document.getElementById('gps-elevation').textContent = trackerElevation;
+      }, 1000);
+
+      showToast('Entrenamiento GPS iniciado', 'success');
+    }
+
+    function pauseRideTracker() {
+      trackerRunning = false;
+      clearInterval(trackerInterval);
+      document.getElementById('btn-start-gps').classList.remove('hidden');
+      document.getElementById('btn-start-gps').innerHTML = '<i class="fa-solid fa-play"></i> Reanudar';
+      document.getElementById('btn-pause-gps').classList.add('hidden');
+
+      const pill = document.getElementById('tracker-status-pill');
+      pill.textContent = 'En pausa';
+      pill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+    }
+
+    function finishRideTracker() {
+      trackerRunning = false;
+      clearInterval(trackerInterval);
+      const finalDist = Math.max(0.5, parseFloat(trackerDistance.toFixed(2)));
+      if (currentUser) {
+        currentUser.km = Math.round(currentUser.km + finalDist);
+        currentUser.ridesCount += 1;
+        updateUserUI();
+      }
+
+      // Publicar automáticamente en el muro de comunidad
+      socialPosts.unshift({
+        id: 'p' + Date.now(),
+        author: currentUser.name,
+        city: currentUser.city,
+        badge: `${currentUser.type} • ${currentUser.level}`,
+        avatar: currentUser.avatar,
+        time: 'Ahora mismo',
+        content: `¡Entrenamiento finalizado con GO BIKE! Recorrí ${finalDist} km con +${trackerElevation} m de desnivel acumulado. ¡Rodando seguro!`,
+        routeTag: `Entrenamiento GPS • ${finalDist} km`,
+        photo: '',
+        likes: 1,
+        liked: true,
+        comments: []
+      });
+      renderSocialFeed();
+
+      // Reset UI
+      trackerSeconds = 0;
+      trackerDistance = 0;
+      trackerElevation = 0;
+      document.getElementById('gps-time').textContent = '00:00:00';
+      document.getElementById('gps-distance').textContent = '0.00';
+      document.getElementById('gps-speed').textContent = '0.0';
+      document.getElementById('gps-elevation').textContent = '0';
+      document.getElementById('btn-start-gps').classList.remove('hidden');
+      document.getElementById('btn-start-gps').innerHTML = '<i class="fa-solid fa-play"></i> Iniciar Entrenamiento';
+      document.getElementById('btn-pause-gps').classList.add('hidden');
+      document.getElementById('btn-finish-gps').classList.add('hidden');
+
+      const pill = document.getElementById('tracker-status-pill');
+      pill.textContent = 'Listo para rodar';
+      pill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-gray-800 text-gray-300 border border-gray-700';
+
+      showToast(`¡Actividad de ${finalDist} km guardada y compartida en Comunidad!`, 'success');
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. MAPA INTERACTIVO LEAFLET (BOGOTÁ Y CUNDINAMARCA)
+    // -----------------------------------------------------------------------
+    function initMap() {
+      if (mapInstance) {
+        applyMapFilters();
+        return;
+      }
+
+      // Centrado en Bogotá / Sabana
+      mapInstance = L.map('gobike-map').setView([4.675, -74.075], 11);
+
+      // Capa oscura estilizada CartoDB Dark Matter
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO | GO BIKE Demo',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(mapInstance);
+
+      mapLayersGroup = L.layerGroup().addTo(mapInstance);
+
+      // Permitir seleccionar punto en el mapa para reportar alerta
+      mapInstance.on('click', function (e) {
+        selectedMapCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+        document.getElementById('selected-coords-display').textContent =
+          `Punto seleccionado: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+        showToast('Coordenadas seleccionadas para nuevo reporte', 'info');
+      });
+
+      applyMapFilters();
+    }
+
+    function applyMapFilters() {
+      if (!mapInstance || !mapLayersGroup) return;
+      mapLayersGroup.clearLayers();
+
+      const diffFilter = document.getElementById('filter-difficulty').value;
+      const maxDist = parseFloat(document.getElementById('filter-distance').value);
+      const showRoutes = document.getElementById('layer-routes').checked;
+      const showAlerts = document.getElementById('layer-alerts').checked;
+      const showWorkshops = document.getElementById('layer-workshops').checked;
+
+      // Filtrar rutas
+      const filteredRoutes = demoRoutes.filter(r => {
+        const matchDiff = diffFilter === 'todas' || r.difficulty === diffFilter;
+        const matchDist = r.distance <= maxDist;
+        return matchDiff && matchDist;
+      });
+
+      // Dibujar Rutas en el mapa
+      if (showRoutes) {
+        filteredRoutes.forEach(route => {
+          const color = route.difficulty === 'Alta' ? '#F59E0B' : route.difficulty === 'Media' ? '#A3E635' : '#34D399';
+          const polyline = L.polyline(route.coords, {
+            color: color,
+            weight: 5,
+            opacity: 0.9
+          }).addTo(mapLayersGroup);
+
+          polyline.bindPopup(`
+            <div class="p-1">
+              <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">Ruta Demo</span>
+              <h4 class="font-bold text-sm text-white mt-1">${route.name}</h4>
+              <p class="text-xs text-gray-300">${route.zone}</p>
+              <p class="text-xs text-[#A3E635] font-bold mt-1">${route.distance} km • +${route.elevation}m • Dificultad ${route.difficulty}</p>
+            </div>
+          `);
+        });
+      }
+
+      // Dibujar Alertas Comunitarias en el mapa
+      if (showAlerts) {
+        safetyReports.forEach(rep => {
+          const alertIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="w-8 h-8 rounded-full bg-red-600 border-2 border-white text-white flex items-center justify-center shadow-lg"><i class="fa-solid fa-triangle-exclamation text-xs"></i></div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+          });
+
+          const marker = L.marker([rep.lat, rep.lng], { icon: alertIcon }).addTo(mapLayersGroup);
+          marker.bindPopup(`
+            <div class="p-1 max-w-[220px]">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-300">${rep.category}</span>
+              <h4 class="font-bold text-xs text-white mt-1">${rep.location}</h4>
+              <p class="text-[11px] text-gray-300 mt-1">${rep.description}</p>
+              <p class="text-[10px] text-gray-400 mt-1.5">Confirmaciones: <strong class="text-[#A3E635]">${rep.confirmations}</strong> • Vigencia: ${rep.ttl}</p>
+            </div>
+          `);
+        });
+      }
+
+      // Dibujar Talleres y Puntos de Asistencia
+      if (showWorkshops) {
+        demoWorkshops.forEach(ws => {
+          const wsIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="w-7 h-7 rounded-full bg-sky-500 border-2 border-white text-white flex items-center justify-center shadow-md"><i class="fa-solid fa-wrench text-[11px]"></i></div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+
+          const marker = L.marker([ws.lat, ws.lng], { icon: wsIcon }).addTo(mapLayersGroup);
+          marker.bindPopup(`
+            <div class="p-1">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300">Asistencia Mecánica</span>
+              <h4 class="font-bold text-xs text-white mt-1">${ws.name}</h4>
+              <p class="text-[11px] text-gray-300 mt-0.5">${ws.hours}</p>
+            </div>
+          `);
+        });
+      }
+
+      renderRoutesList(filteredRoutes);
+      renderAlertsList();
+    }
+
+    function renderRoutesList(routes) {
+      const container = document.getElementById('routes-list-container');
+      if (!routes.length) {
+        container.innerHTML = `<p class="text-xs text-gray-400">No hay rutas con esos filtros.</p>`;
+        return;
+      }
+      container.innerHTML = routes.map(r => `
+        <div onclick="focusRouteOnMap('${r.id}')" class="p-3 rounded-2xl bg-[#0D1117] hover:bg-[#19222C] border border-[#1F2A37] cursor-pointer transition-all">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="text-xs font-bold text-white">${r.name}</h4>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#0A2E1D] text-[#A3E635]">${r.distance} km</span>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-0.5">${r.zone}</p>
+          <div class="flex items-center justify-between mt-1.5 text-[10px] text-gray-300">
+            <span><i class="fa-solid fa-arrow-trend-up text-emerald-400 mr-1"></i>+${r.elevation}m</span>
+            <span>Dificultad: <strong>${r.difficulty}</strong></span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function focusRouteOnMap(routeId) {
+      const route = demoRoutes.find(r => r.id === routeId);
+      if (route && mapInstance) {
+        mapInstance.setView(route.coords[0], 13);
+      }
+    }
+
+    function renderAlertsList() {
+      const container = document.getElementById('alerts-list-container');
+      document.getElementById('alerts-count-badge').textContent = safetyReports.length;
+      container.innerHTML = safetyReports.map(rep => `
+        <div class="p-3 rounded-2xl bg-[#0D1117] border border-red-500/25 space-y-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-300">${rep.category}</span>
+            <span class="text-[10px] text-gray-400">${rep.time} • Vigencia ${rep.ttl}</span>
+          </div>
+          <p class="text-xs font-bold text-white">${rep.location}</p>
+          <p class="text-[11px] text-gray-300">${rep.description}</p>
+          <div class="flex items-center justify-between pt-1">
+            <button onclick="confirmAlert('${rep.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${rep.confirmedByMe ? 'bg-[#A3E635] text-[#0A2E1D]' : 'bg-[#1F2A37] text-gray-200 hover:bg-gray-700'}">
+              <i class="fa-solid fa-check-circle mr-1"></i> Confirmar (${rep.confirmations})
+            </button>
+            <button onclick="reportFalseAlert('${rep.id}')" class="text-[10px] text-gray-400 hover:text-amber-300">
+              <i class="fa-solid fa-flag mr-0.5"></i> Moderar
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function confirmAlert(id) {
+      const rep = safetyReports.find(r => r.id === id);
+      if (!rep) return;
+      if (!rep.confirmedByMe) {
+        rep.confirmations += 1;
+        rep.confirmedByMe = true;
+        showToast('Gracias por confirmar la alerta para la comunidad', 'success');
+      } else {
+        rep.confirmations -= 1;
+        rep.confirmedByMe = false;
+      }
+      applyMapFilters();
+    }
+
+    function reportFalseAlert(id) {
+      showToast('Reporte enviado a moderación comunitaria para verificar vigencia', 'info');
+    }
+
+    function requestUserLocation() {
+      if (!navigator.geolocation) {
+        showToast('Tu navegador no soporta geolocalización', 'error');
+        return;
+      }
+      showToast('Solicitando autorización expresa de ubicación...', 'info');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          selectedMapCoords = { lat: latitude, lng: longitude };
+          if (currentUser) {
+            currentUser.locationAuthorized = true;
+            updateUserUI();
+          }
+          if (mapInstance) {
+            mapInstance.setView([latitude, longitude], 14);
+            if (userLocationMarker) mapInstance.removeLayer(userLocationMarker);
+            userLocationMarker = L.circleMarker([latitude, longitude], {
+              radius: 9,
+              fillColor: '#A3E635',
+              color: '#FFFFFF',
+              weight: 3,
+              fillOpacity: 1
+            }).addTo(mapInstance).bindPopup('Tu ubicación autorizada').openPopup();
+          }
+          showToast('Ubicación autorizada y centrada en el mapa', 'success');
+        },
+        () => {
+          // Fallback en Bogotá si el usuario deniega o está en entorno sin GPS
+          if (mapInstance) mapInstance.setView([4.6732, -74.0568], 13);
+          showToast('No se obtuvo GPS del dispositivo; centrado en Parque El Virrey, Bogotá', 'info');
+        }
+      );
+    }
+
+    function openReportModal() {
+      document.getElementById('report-coords-input').value =
+        `${selectedMapCoords.lat.toFixed(4)}, ${selectedMapCoords.lng.toFixed(4)}`;
+      document.getElementById('modal-report').classList.remove('hidden');
+    }
+
+    function submitSafetyReport(e) {
+      e.preventDefault();
+      const category = document.getElementById('report-category').value;
+      const location = document.getElementById('report-location-text').value.trim();
+      const description = document.getElementById('report-desc').value.trim();
+      const ttl = document.getElementById('report-ttl').value;
+
+      safetyReports.unshift({
+        id: 'rep' + Date.now(),
+        category,
+        location,
+        description,
+        lat: selectedMapCoords.lat + (Math.random() - 0.5) * 0.004,
+        lng: selectedMapCoords.lng + (Math.random() - 0.5) * 0.004,
+        author: currentUser ? currentUser.name : 'Ciclista',
+        time: 'Ahora mismo',
+        ttl,
+        confirmations: 1,
+        confirmedByMe: true,
+        isDemo: false
+      });
+
+      e.target.reset();
+      closeModal('modal-report');
+      if (mapInstance) applyMapFilters();
+      else renderAlertsList();
+      showToast('¡Alerta comunitaria publicada en el mapa!', 'success');
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. RED SOCIAL PARA CICLISTAS (COMUNIDAD)
+    // -----------------------------------------------------------------------
+    function renderSocialFeed() {
+      const container = document.getElementById('social-feed-container');
+      container.innerHTML = socialPosts.map(post => `
+        <article class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-4 sm:p-5 space-y-3 shadow-md">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img src="${post.avatar}" alt="${post.author}" class="w-11 h-11 rounded-full object-cover border border-[#A3E635]/40" />
+              <div>
+                <h4 class="text-sm font-bold text-white">${post.author}</h4>
+                <p class="text-[11px] text-gray-400">${post.city} • ${post.badge} • ${post.time}</p>
+              </div>
+            </div>
+            ${post.routeTag ? `<span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2E1D] text-[#A3E635] text-[11px] font-bold"><i class="fa-solid fa-route"></i> ${post.routeTag}</span>` : ''}
+          </div>
+
+          ${post.routeTag ? `<div class="sm:hidden"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2E1D] text-[#A3E635] text-[11px] font-bold"><i class="fa-solid fa-route"></i> ${post.routeTag}</span></div>` : ''}
+
+          <p class="text-sm text-gray-200 leading-relaxed">${post.content}</p>
+
+          ${post.photo ? `<img src="${post.photo}" alt="Foto de rodada" onerror="this.style.display='none'" class="w-full h-56 sm:h-72 object-cover rounded-2xl border border-[#1F2A37]" />` : ''}
+
+          <!-- Botones de interacción -->
+          <div class="pt-2 border-t border-[#1F2A37] flex items-center justify-between text-xs">
+            <div class="flex items-center gap-4">
+              <button onclick="toggleLike('${post.id}')" class="flex items-center gap-1.5 font-bold transition-all ${post.liked ? 'text-[#A3E635]' : 'text-gray-400 hover:text-white'}">
+                <i class="fa-${post.liked ? 'solid' : 'regular'} fa-heart text-sm"></i> Me gusta (${post.likes})
+              </button>
+              <span class="text-gray-400 flex items-center gap-1.5">
+                <i class="fa-regular fa-comment text-sm"></i> Comentar (${post.comments.length})
+              </span>
+            </div>
+            <button onclick="sharePost('${post.id}')" class="text-gray-400 hover:text-[#A3E635] flex items-center gap-1 font-semibold">
+              <i class="fa-solid fa-share"></i> Compartir
+            </button>
+          </div>
+
+          <!-- Comentarios -->
+          <div class="space-y-2 pt-1">
+            ${post.comments.map(c => `
+              <div class="px-3 py-2 rounded-xl bg-[#0D1117] text-xs">
+                <span class="font-bold text-[#A3E635]">${c.user}:</span>
+                <span class="text-gray-300 ml-1">${c.text}</span>
+              </div>
+            `).join('')}
+            <form onsubmit="addComment(event, '${post.id}')" class="flex gap-2 mt-2">
+              <input type="text" id="comment-input-${post.id}" required placeholder="Escribe un comentario..."
+                class="flex-1 px-3 py-2 rounded-xl bg-[#0D1117] border border-[#1F2A37] text-xs text-white focus:outline-none focus:border-[#A3E635]" />
+              <button type="submit" class="px-3.5 py-2 rounded-xl bg-[#1F2A37] hover:bg-[#A3E635] text-white hover:text-[#0A2E1D] text-xs font-bold transition-all">
+                Enviar
+              </button>
+            </form>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function createPost(e) {
+      e.preventDefault();
+      const content = document.getElementById('post-content').value.trim();
+      const routeTag = document.getElementById('post-route-tag').value;
+      const photo = document.getElementById('post-photo-select').value;
+
+      socialPosts.unshift({
+        id: 'p' + Date.now(),
+        author: currentUser.name,
+        city: currentUser.city,
+        badge: `${currentUser.type} • ${currentUser.level}`,
+        avatar: currentUser.avatar,
+        time: 'Ahora mismo',
+        content,
+        routeTag,
+        photo,
+        likes: 0,
+        liked: false,
+        comments: []
+      });
+
+      e.target.reset();
+      renderSocialFeed();
+      updateUserUI();
+      showToast('Publicación compartida con la comunidad GO BIKE', 'success');
+    }
+
+    function toggleLike(postId) {
+      const post = socialPosts.find(p => p.id === postId);
+      if (!post) return;
+      post.liked = !post.liked;
+      post.likes += post.liked ? 1 : -1;
+      renderSocialFeed();
+    }
+
+    function addComment(e, postId) {
+      e.preventDefault();
+      const input = document.getElementById(`comment-input-${postId}`);
+      const text = input.value.trim();
+      if (!text) return;
+      const post = socialPosts.find(p => p.id === postId);
+      if (post) {
+        post.comments.push({ user: currentUser.name, text });
+        renderSocialFeed();
+      }
+    }
+
+    function sharePost(postId) {
+      showToast('Enlace de la publicación copiado para compartir con tu grupo', 'info');
+    }
+
+    function renderSuggestedCyclists() {
+      const container = document.getElementById('suggested-cyclists-container');
+      container.innerHTML = suggestedCyclists.map(c => `
+        <div class="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-[#0D1117] border border-[#1F2A37]">
+          <div>
+            <p class="text-xs font-bold text-white">${c.name}</p>
+            <p class="text-[10px] text-gray-400">${c.city} • ${c.discipline}</p>
+          </div>
+          <button onclick="toggleFollow('${c.id}')" class="px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${c.followed ? 'bg-[#0A2E1D] text-[#A3E635] border border-[#A3E635]/40' : 'bg-[#A3E635] text-[#0A2E1D]'}">
+            ${c.followed ? 'Siguiendo' : '+ Seguir'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function toggleFollow(id) {
+      const target = suggestedCyclists.find(c => c.id === id);
+      if (!target) return;
+      target.followed = !target.followed;
+      if (currentUser) {
+        currentUser.following += target.followed ? 1 : -1;
+        updateUserUI();
+      }
+      renderSuggestedCyclists();
+    }
+
+    // -----------------------------------------------------------------------
+    // 7. RODADAS GRUPALES
+    // -----------------------------------------------------------------------
+    function renderGroupRides() {
+      const container = document.getElementById('rides-grid-container');
+      container.innerHTML = groupRides.map(ride => {
+        const spotsLeft = Math.max(0, ride.totalSpots - ride.participants.length);
+        return `
+          <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl p-5 flex flex-col justify-between space-y-4 shadow-lg">
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#0A2E1D] text-[#A3E635] border border-[#A3E635]/30">
+                  ${ride.distance} km • Dificultad ${ride.difficulty}
+                </span>
+                <span class="text-xs font-bold ${spotsLeft > 0 ? 'text-emerald-400' : 'text-red-400'}">
+                  ${spotsLeft} cupos libres
+                </span>
+              </div>
+              <h3 class="font-display text-lg font-extrabold text-white">${ride.title}</h3>
+              <p class="text-xs text-gray-400">Organiza: <strong class="text-gray-200">${ride.organizer}</strong></p>
+
+              <div class="p-3 rounded-2xl bg-[#0D1117] border border-[#1F2A37] space-y-1.5 text-xs text-gray-300">
+                <p><i class="fa-regular fa-calendar text-[#A3E635] w-4"></i> <strong>${ride.date}</strong> a las <strong>${ride.time}</strong></p>
+                <p><i class="fa-solid fa-location-dot text-[#A3E635] w-4"></i> ${ride.meetingPoint}</p>
+              </div>
+
+              <!-- Lista de participantes -->
+              <div>
+                <p class="text-[11px] font-semibold text-gray-400 mb-1.5">Participantes inscritos (${ride.participants.length}/${ride.totalSpots}):</p>
+                <div class="flex flex-wrap gap-1.5">
+                  ${ride.participants.map(p => `
+                    <span class="px-2.5 py-1 rounded-lg bg-[#0D1117] border border-[#1F2A37] text-[11px] text-gray-200">
+                      <i class="fa-solid fa-bicycle text-[#A3E635] mr-1 text-[10px]"></i>${p}
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <button onclick="toggleJoinRide('${ride.id}')" class="w-full py-3 rounded-xl font-extrabold text-xs sm:text-sm transition-all ${ride.joined ? 'bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40' : 'bg-[#A3E635] hover:bg-[#84CC16] text-[#0A2E1D]'}">
+              ${ride.joined ? 'Cancelar Inscripción' : 'Inscribirme a esta Rodada'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleJoinRide(rideId) {
+      const ride = groupRides.find(r => r.id === rideId);
+      if (!ride || !currentUser) return;
+
+      if (ride.joined) {
+        ride.joined = false;
+        ride.participants = ride.participants.filter(p => p !== currentUser.name);
+        showToast('Has cancelado tu inscripción a la rodada', 'info');
+      } else {
+        if (ride.participants.length >= ride.totalSpots) {
+          showToast('Esta rodada ya alcanzó el máximo de cupos', 'error');
+          return;
+        }
+        ride.joined = true;
+        if (!ride.participants.includes(currentUser.name)) {
+          ride.participants.push(currentUser.name);
+        }
+        showToast('¡Inscrito! Nos vemos en el punto de encuentro', 'success');
+      }
+      renderGroupRides();
+    }
+
+    function openCreateRideModal() {
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      document.getElementById('ride-date').value = tomorrow;
+      document.getElementById('modal-create-ride').classList.remove('hidden');
+    }
+
+    function createGroupRide(e) {
+      e.preventDefault();
+      const title = document.getElementById('ride-title').value.trim();
+      const date = document.getElementById('ride-date').value;
+      const time = document.getElementById('ride-time').value;
+      const meetingPoint = document.getElementById('ride-meeting').value.trim();
+      const distance = parseFloat(document.getElementById('ride-dist').value);
+      const difficulty = document.getElementById('ride-diff').value;
+      const totalSpots = parseInt(document.getElementById('ride-spots').value, 10);
+
+      groupRides.unshift({
+        id: 'gr' + Date.now(),
+        title,
+        organizer: currentUser.name,
+        date,
+        time,
+        meetingPoint,
+        distance,
+        difficulty,
+        totalSpots,
+        participants: [currentUser.name],
+        joined: true
+      });
+
+      e.target.reset();
+      closeModal('modal-create-ride');
+      renderGroupRides();
+      showToast('¡Nueva rodada grupal creada y publicada!', 'success');
+    }
+
+    // -----------------------------------------------------------------------
+    // 8. SEGURIDAD SOS, PRIVACIDAD Y CONEXIÓN SUPABASE
+    // -----------------------------------------------------------------------
+    function openSOSModal() {
+      document.getElementById('modal-sos').classList.remove('hidden');
+    }
+
+    function activateLiveShare() {
+      if (currentUser) {
+        currentUser.locationAuthorized = true;
+        updateUserUI();
+      }
+      const badge = document.getElementById('live-gps-badge');
+      badge.classList.remove('hidden');
+      badge.classList.add('inline-flex');
+      document.getElementById('gps-share-state').textContent = 'Activa para contactos SOS';
+      closeModal('modal-sos');
+      showToast('Ubicación en vivo autorizada y compartida con tu contacto SOS', 'success');
+    }
+
+    function triggerEmergencyAlert() {
+      closeModal('modal-sos');
+      showToast(`ALERTA SOS ENVIADA a ${currentUser.emergencyName} (${currentUser.emergencyPhone}) con coordenadas actuales`, 'error');
+    }
+
+    function toggleLocationPermission() {
+      const checked = document.getElementById('toggle-location-auth').checked;
+      if (currentUser) {
+        currentUser.locationAuthorized = checked;
+        localStorage.setItem('gobike_user', JSON.stringify(currentUser));
+      }
+      showToast(checked ? 'Autorización de ubicación activada para rodadas' : 'Ubicación desactivada por privacidad', 'info');
+    }
+
+    function saveEmergencyContact() {
+      const name = document.getElementById('emergency-name').value.trim();
+      const phone = document.getElementById('emergency-phone').value.trim();
+      if (currentUser) {
+        currentUser.emergencyName = name;
+        currentUser.emergencyPhone = phone;
+        localStorage.setItem('gobike_user', JSON.stringify(currentUser));
+        updateUserUI();
+      }
+      showToast('Contacto de emergencia actualizado', 'success');
+    }
+
+    function connectSupabase() {
+      const url = document.getElementById('sb-url').value.trim();
+      const key = document.getElementById('sb-key').value.trim();
+      if (!url || !key) {
+        showToast('Ingresa la URL y Anon Key de tu proyecto Supabase', 'error');
+        return;
+      }
+      try {
+        window.supabase.createClient(url, key);
+        const badge = document.getElementById('supabase-status-badge');
+        badge.textContent = 'Cliente Supabase Listo';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        showToast('Cliente Supabase inicializado correctamente', 'success');
+      } catch (err) {
+        showToast('Error al validar credenciales de Supabase', 'error');
+      }
+    }
+
+    function openSQLModal() {
+      document.getElementById('modal-sql').classList.remove('hidden');
+    }
+
+    function copySQL() {
+      const text = document.getElementById('sql-schema-code').textContent;
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast('Esquema SQL de Supabase copiado al portapapeles', 'success');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const styles = {
+        success: 'bg-[#0A2E1D] border-[#A3E635] text-[#A3E635]',
+        error: 'bg-red-950 border-red-500 text-red-200',
+        info: 'bg-[#131A22] border-gray-600 text-white'
+      };
+      toast.className = `px-4 py-3 rounded-2xl border shadow-2xl text-xs font-bold flex items-center gap-2.5 transition-all ${styles[type] || styles.info}`;
+      toast.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Inicialización al cargar
+    window.onload = function () {
+      renderAvatarBuilderPreview('reg');
+      const savedUser = localStorage.getItem('gobike_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+      }
+    };
+
+    // ==========================================
+// DICCIONARIO DE CIUDADES PRINCIPALES DE COLOMBIA
+// ==========================================
+const COLOMBIA_CITIES_COORDS = {
+  "Bogotá":        { region: "Cundinamarca",    coords: [4.6584, -74.0548] },
+  "Medellín":      { region: "Antioquia",       coords: [6.2442, -75.5812] },
+  "Cali":          { region: "Valle del Cauca", coords: [3.4516, -76.5320] },
+  "Barranquilla":  { region: "Atlántico",       coords: [10.9878, -74.7889] },
+  "Cartagena":     { region: "Bolívar",         coords: [10.3910, -75.4794] },
+  "Bucaramanga":   { region: "Santander",       coords: [7.1193, -73.1227] },
+  "Pereira":       { region: "Risaralda",       coords: [4.8087, -75.6906] },
+  "Manizales":     { region: "Caldas",          coords: [5.0703, -75.5138] },
+  "Santa Marta":   { region: "Magdalena",       coords: [11.2408, -74.1990] },
+  "Ibagué":        { region: "Tolima",          coords: [4.4389, -75.2322] },
+  "Villavicencio": { region: "Meta",            coords: [4.1420, -73.6266] },
+  "Tunja":         { region: "Boyacá",          coords: [5.5353, -73.3678] }
+};
+
+// Función para procesar la creación de una nueva ruta con ciudad seleccionada
+function handleRegisterUser(event) {
+  event.preventDefault();
+
+  // 1. Capturar datos del formulario de inscripción
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const city = document.getElementById('reg-city').value; // <--- Ciudad seleccionada
+  const discipline = document.getElementById('reg-discipline').value;
+  const level = document.getElementById('reg-level').value;
+  const bio = document.getElementById('reg-bio')?.value.trim() || `Ciclista de ${discipline} en ${city}.`;
+
+  // 2. Asignar al perfil del usuario actual
+  const newUser = {
+    name: name,
+    email: email,
+    city: city,
+    discipline: discipline,
+    level: level,
+    bio: bio,
+    avatar: typeof getAvatarDataURL === 'function' ? getAvatarDataURL() : ''
+  };
+
+// ==========================================
+// AVATAR DE BICICLETA EN PERFIL
+// ==========================================
+const BIKE_AVATAR_OPTIONS = {
+  types: [
+    { id: 'ruta', label: 'Ruta (Drop bar)', wheelRadius: 21, hasSuspension: false, dropBar: true, tireWidth: 3 },
+    { id: 'mtb', label: 'MTB (Montaña)', wheelRadius: 22, hasSuspension: true, dropBar: false, tireWidth: 4.5 },
+    { id: 'gravel', label: 'Gravel', wheelRadius: 21.5, hasSuspension: false, dropBar: true, tireWidth: 3.8 },
+    { id: 'urbana', label: 'Urbana / Ciclovía', wheelRadius: 21, hasSuspension: false, dropBar: false, tireWidth: 3.2 }
+  ],
+  frameColors: [
+    { id: 'lime', label: 'Verde Lima', hex: '#A3E635' },
+    { id: 'emerald', label: 'Verde Bosque', hex: '#10B981' },
+    { id: 'carbon', label: 'Negro Carbono', hex: '#E4E4E7' },
+    { id: 'red', label: 'Rojo Escarabajo', hex: '#EF4444' },
+    { id: 'blue', label: 'Azul Pacífico', hex: '#38BDF8' },
+    { id: 'yellow', label: 'Amarillo Tour', hex: '#FACC15' }
+  ],
+  wheelColors: [
+    { id: 'dark', label: 'Rines Negros', hex: '#27272A' },
+    { id: 'lime', label: 'Rines Lima', hex: '#A3E635' },
+    { id: 'silver', label: 'Rines Aluminio', hex: '#CBD5E1' }
+  ]
+};
+
+let bikeAvatarConfig = {
+  type: 'ruta',
+  frame: 'lime',
+  wheel: 'dark',
+  nickname: ''
+};
+
+function generateBikeAvatarSVG(cfg = bikeAvatarConfig) {
+  const typeObj = BIKE_AVATAR_OPTIONS.types.find(t => t.id === cfg.type) || BIKE_AVATAR_OPTIONS.types[0];
+  const frameObj = BIKE_AVATAR_OPTIONS.frameColors.find(c => c.id === cfg.frame) || BIKE_AVATAR_OPTIONS.frameColors[0];
+  const wheelObj = BIKE_AVATAR_OPTIONS.wheelColors.find(w => w.id === cfg.wheel) || BIKE_AVATAR_OPTIONS.wheelColors[0];
+
+  const r = typeObj.wheelRadius;
+  const leftWheelX = 48;
+  const rightWheelX = 132;
+  const wheelY = 66;
+  const bbX = 88;
+  const bbY = 66;
+  const seatTopX = 74;
+  const seatTopY = 38;
+  const headTopX = 114;
+  const headTopY = 36;
+
+  const handlebarSVG = typeObj.dropBar
+    ? `<path d="M111 31 L118 31 C124 31, 126 37, 122 42 L117 44" fill="none" stroke="#E4E4E7" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`
+    : `<path d="M108 31 L122 31" fill="none" stroke="#E4E4E7" stroke-width="3" stroke-linecap="round"/>`;
+
+  const suspensionSVG = typeObj.hasSuspension
+    ? `<line x1="117" y1="45" x2="123" y2="54" stroke="#A3E635" stroke-width="4.2" stroke-linecap="round"/>`
+    : '';
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 96" class="w-full h-full">
+    <!-- Sombra suave en el suelo -->
+    <ellipse cx="90" cy="90" rx="58" ry="3.5" fill="#000000" fill-opacity="0.45"/>
+
+    <!-- Rueda trasera -->
+    <circle cx="${leftWheelX}" cy="${wheelY}" r="${r}" fill="none" stroke="${wheelObj.hex}" stroke-width="${typeObj.tireWidth}"/>
+    <circle cx="${leftWheelX}" cy="${wheelY}" r="${r - 4}" fill="none" stroke="#52525B" stroke-width="1" stroke-dasharray="3 3"/>
+    <circle cx="${leftWheelX}" cy="${wheelY}" r="3" fill="#A1A1AA"/>
+
+    <!-- Rueda delantera -->
+    <circle cx="${rightWheelX}" cy="${wheelY}" r="${r}" fill="none" stroke="${wheelObj.hex}" stroke-width="${typeObj.tireWidth}"/>
+    <circle cx="${rightWheelX}" cy="${wheelY}" r="${r - 4}" fill="none" stroke="#52525B" stroke-width="1" stroke-dasharray="3 3"/>
+    <circle cx="${rightWheelX}" cy="${wheelY}" r="3" fill="#A1A1AA"/>
+
+    <!-- Cuadro principal -->
+    <polyline points="${leftWheelX},${wheelY} ${bbX},${bbY} ${seatTopX},${seatTopY} ${headTopX},${headTopY} ${bbX},${bbY}" fill="none" stroke="${frameObj.hex}" stroke-width="4.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <line x1="${leftWheelX}" y1="${wheelY}" x2="${seatTopX}" y2="${seatTopY}" stroke="${frameObj.hex}" stroke-width="3.2" stroke-linecap="round"/>
+
+    <!-- Horquilla delantera -->
+    <line x1="${headTopX}" y1="${headTopY}" x2="${rightWheelX}" y2="${wheelY}" stroke="${frameObj.hex}" stroke-width="3.8" stroke-linecap="round"/>
+    ${suspensionSVG}
+
+    <!-- Tija y sillín -->
+    <line x1="${seatTopX}" y1="${seatTopY}" x2="${seatTopX - 3}" y2="31" stroke="#D4D4D8" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M65 30 L80 30 C82 30, 82 33, 79 33 L67 33 C64 33, 64 30, 65 30 Z" fill="#F4F4F5"/>
+
+    <!-- Manubrio -->
+    <line x1="${headTopX}" y1="${headTopY}" x2="113" y2="31" stroke="#D4D4D8" stroke-width="2.6" stroke-linecap="round"/>
+    ${handlebarSVG}
+
+    <!-- Plato y biela -->
+    <circle cx="${bbX}" cy="${bbY}" r="6.5" fill="#18181B" stroke="#A1A1AA" stroke-width="1.8"/>
+    <line x1="${bbX}" y1="${bbY}" x2="${bbX - 5}" y2="${bbY + 7}" stroke="#E4E4E7" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderBikeAvatarBuilder() {
+  const previewEl = document.getElementById('bike-avatar-preview');
+  const controlsEl = document.getElementById('bike-avatar-controls');
+  const labelEl = document.getElementById('bike-avatar-label');
+  if (!previewEl || !controlsEl) return;
+
+  previewEl.innerHTML = generateBikeAvatarSVG(bikeAvatarConfig);
+
+  const typeObj = BIKE_AVATAR_OPTIONS.types.find(t => t.id === bikeAvatarConfig.type) || BIKE_AVATAR_OPTIONS.types[0];
+  const frameObj = BIKE_AVATAR_OPTIONS.frameColors.find(c => c.id === bikeAvatarConfig.frame) || BIKE_AVATAR_OPTIONS.frameColors[0];
+  if (labelEl) {
+    labelEl.textContent = `${typeObj.label.split(' ')[0]} • Cuadro ${frameObj.label}`;
+  }
+
+  controlsEl.innerHTML = `
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div>
+        <label class="block text-[11px] text-gray-400 mb-1">Tipo de Bicicleta</label>
+        <select onchange="updateBikeAvatarTrait('type', this.value)" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+          ${BIKE_AVATAR_OPTIONS.types.map(t => `
+            <option value="${t.id}" ${bikeAvatarConfig.type === t.id ? 'selected' : ''}>${t.label}</option>
+          `).join('')}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-[11px] text-gray-400 mb-1">Color de Rines</label>
+        <select onchange="updateBikeAvatarTrait('wheel', this.value)" class="w-full bg-[#131A22] border border-[#1F2A37] rounded-xl px-2.5 py-2 text-white text-xs focus:border-[#A3E635] focus:outline-none">
+          ${BIKE_AVATAR_OPTIONS.wheelColors.map(w => `
+            <option value="${w.id}" ${bikeAvatarConfig.wheel === w.id ? 'selected' : ''}>${w.label}</option>
+          `).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-2.5">
+      <span class="text-[11px] text-gray-400">Color del cuadro:</span>
+      <div class="flex items-center gap-2">
+        ${BIKE_AVATAR_OPTIONS.frameColors.map(c => `
+          <button
+            type="button"
+            onclick="updateBikeAvatarTrait('frame', '${c.id}')"
+            title="${c.label}"
+            class="w-6 h-6 rounded-full border-2 transition ${bikeAvatarConfig.frame === c.id ? 'border-white scale-110 ring-2 ring-[#A3E635]/60' : 'border-[#1F2A37]'}"
+            style="background-color: ${c.hex};"
+          ></button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function updateBikeAvatarTrait(key, value) {
+  bikeAvatarConfig[key] = value;
+  renderBikeAvatarBuilder();
+}
+
+function randomizeBikeAvatar() {
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)].id;
+  bikeAvatarConfig = {
+    type: pick(BIKE_AVATAR_OPTIONS.types),
+    frame: pick(BIKE_AVATAR_OPTIONS.frameColors),
+    wheel: pick(BIKE_AVATAR_OPTIONS.wheelColors),
+    nickname: bikeAvatarConfig.nickname
+  };
+  renderBikeAvatarBuilder();
+}
+
+function saveBikeAvatarToProfile() {
+  const bikeSvgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(generateBikeAvatarSVG(bikeAvatarConfig));
+
+  if (typeof state !== 'undefined' && state.user) {
+    state.user.bikeAvatar = {
+      ...bikeAvatarConfig,
+      svgUrl: bikeSvgDataUrl
+    };
+  }
+
+  document.querySelectorAll('.user-bike-avatar-img').forEach(img => {
+    img.src = bikeSvgDataUrl;
+  });
+
+  if (typeof showToast === 'function') {
+    showToast('🚲 Avatar de bicicleta guardado en tu perfil');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof renderBikeAvatarBuilder === 'function') {
+    renderBikeAvatarBuilder();
+  }
+});
+
+
+  if (typeof state !== 'undefined') {
+    state.user = newUser;
+  }
+
+  // 3. Actualizar textos visibles en la pestaña Perfil
+  const profileNameEl = document.getElementById('profile-name-display');
+  const profileCityEl = document.getElementById('profile-city-display');
+  const profileDiscEl = document.getElementById('profile-discipline-badge');
+  const profileLevelEl = document.getElementById('profile-level-badge');
+  const profileBioEl = document.getElementById('profile-bio-display');
+
+  if (profileNameEl) profileNameEl.textContent = newUser.name;
+  if (profileCityEl) profileCityEl.textContent = `📍 ${newUser.city}`;
+  if (profileDiscEl) profileDiscEl.textContent = `Ciclismo: ${newUser.discipline}`;
+  if (profileLevelEl) profileLevelEl.textContent = `Nivel: ${newUser.level}`;
+  if (profileBioEl) profileBioEl.textContent = newUser.bio;
+
+  // 4. Centrar el mapa en la ciudad elegida al inscribirse
+  const cityInfo = COLOMBIA_CITIES_COORDS[city] || COLOMBIA_CITIES_COORDS["Bogotá"];
+  if (typeof map !== 'undefined' && map) {
+    map.flyTo(cityInfo.coords, 12, { duration: 1.2 });
+  }
+
+  // 5. Ocultar pantalla de registro y mostrar la app
+  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('app-shell')?.classList.remove('hidden');
+
+  if (typeof showToast === 'function') {
+    showToast(`🚴‍♂️ ¡Bienvenido a GO BIKE, ${name} (${city})!`);
+  }
+
+
+  
+  
+  
+}
+
+  </script>
+  <!-- MODAL COMPLETO PARA CREAR NUEVA RUTA -->
+<div id="modal-create-route" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-[#131A22] border border-[#1F2A37] rounded-3xl max-w-md w-full p-6 shadow-2xl">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display font-bold text-lg text-white">Compartir Nueva Ruta</h3>
+      <button type="button" onclick="document.getElementById('modal-create-route').classList.add('hidden')" class="w-8 h-8 rounded-full bg-zinc-800 text-gray-400 hover:text-white flex items-center justify-center">✕</button>
+    </div>
+
+    <form id="form-create-route" onsubmit="handleCreateNewRoute(event)" class="space-y-3.5">
+      <!-- Nombre de la ruta -->
+      <div>
+        <label class="block text-xs font-medium text-gray-300 mb-1">Nombre de la Ruta</label>
+        <input type="text" id="route-name" required placeholder="Ej: Ascenso Alto de Las Palmas" class="w-full px-3.5 py-2.5 rounded-xl bg-[#0A140F] border border-[#1F2A37] text-white text-sm focus:border-[#A3E635] focus:outline-none">
+      </div>
+
+      <!-- Ciudad Principal -->
+      <div>
+        <label class="block text-xs font-medium text-gray-300 mb-1">Ciudad / Región</label>
+        <select id="route-city" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#0A140F] border border-[#1F2A37] text-white text-sm focus:border-[#A3E635] focus:outline-none">
+          <option value="Bogotá">Bogotá & Cundinamarca</option>
+          <option value="Medellín">Medellín & Antioquia</option>
+          <option value="Cali">Cali & Valle del Cauca</option>
+          <option value="Barranquilla">Barranquilla & Atlántico</option>
+          <option value="Cartagena">Cartagena & Bolívar</option>
+          <option value="Bucaramanga">Bucaramanga & Santander</option>
+          <option value="Pereira">Pereira & Risaralda</option>
+          <option value="Manizales">Manizales & Caldas</option>
+          <option value="Santa Marta">Santa Marta & Magdalena</option>
+          <option value="Ibagué">Ibagué & Tolima</option>
+          <option value="Villavicencio">Villavicencio & Meta</option>
+          <option value="Tunja">Tunja & Boyacá</option>
+        </select>
+      </div>
+
+      <!-- Distancia y Dificultad en 2 columnas -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Distancia (km)</label>
+          <input type="number" step="0.1" id="route-distance" required placeholder="18.5" class="w-full px-3.5 py-2.5 rounded-xl bg-[#0A140F] border border-[#1F2A37] text-white text-sm focus:border-[#A3E635] focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Dificultad</label>
+          <select id="route-difficulty" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#0A140F] border border-[#1F2A37] text-white text-sm focus:border-[#A3E635] focus:outline-none">
+            <option value="Principiante">Principiante</option>
+            <option value="Intermedio">Intermedio</option>
+            <option value="Avanzado">Avanzado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex gap-2 pt-3">
+        <button type="button" onclick="document.getElementById('modal-create-route').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-gray-300 font-semibold text-xs">Cancelar</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-xl bg-[#A3E635] hover:bg-lime-300 text-zinc-950 font-bold text-xs">Guardar y Trazar Ruta</button>
+      </div>
+    </form>
+  </div>
+
+  
+</div>
+
+<!-- ==========================================
+// PERFIL AVATAR CUERPO ENTERO Y BICI EN PERFIL
+// ========================================== -->
+<script>
+  const soloCyclistState = {
+    skin: '#E0AC69',
+    hair: 'ponytail',
+    mood: 'smile',
+    helmet: '#A3E635',
+    glasses: '#A3E635',
+    sleeves: 'short',
+    jersey: '#0A2E1D',
+    pantsLength: 'short',
+    shorts: '#18181B',
+    socks: '#F4F4F5',
+    shoeStyle: 'ruta',
+    shoes: '#A3E635',
+    bikeNick: '',
+    bikeType: 'ruta',
+    bikeFrame: '#A3E635',
+    bikeWheel: '#27272A'
+  };
+
+  function scHairSVG(hair, skin) {
+    const hairColor = skin === '#8D5524' ? '#18181B' : '#3B2314';
+    if (hair === 'ponytail') {
+      return `<path d="M84 32 C97 30, 102 46, 95 62 C91 55, 88 46, 83 39 Z" fill="${hairColor}"/>`;
+    }
+    if (hair === 'bun') {
+      return `<circle cx="70" cy="21" r="8" fill="${hairColor}"/>`;
+    }
+    if (hair === 'short') {
+      return `<path d="M55 37 C55 27, 85 27, 85 37 L85 43 L81 37 L59 37 L55 43 Z" fill="${hairColor}"/>`;
+    }
+    return '';
+  }
+
+  function scFaceSVG(mood, glasses) {
+    let eyesAndGlasses = '';
+    if (glasses === 'none') {
+      eyesAndGlasses = `
+        <circle cx="63" cy="44" r="2.3" fill="#18181B"/>
+        <circle cx="77" cy="44" r="2.3" fill="#18181B"/>
+      `;
+    } else {
+      eyesAndGlasses = `
+        <rect x="54" y="39" width="32" height="9" rx="3.5" fill="${glasses}" stroke="#18181B" stroke-width="1.3"/>
+        <line x1="58" y1="41" x2="66" y2="46" stroke="#FFFFFF" stroke-width="1.3" stroke-opacity="0.65" stroke-linecap="round"/>
+      `;
+    }
+
+    let mouth = `<path d="M65 55 Q70 59 75 55" fill="none" stroke="#5C3A21" stroke-width="1.6" stroke-linecap="round"/>`;
+    if (mood === 'focus') {
+      mouth = `<line x1="65" y1="56" x2="75" y2="56" stroke="#5C3A21" stroke-width="1.7" stroke-linecap="round"/>`;
+    } else if (mood === 'sprint') {
+      mouth = `<path d="M64 54.5 Q70 60 76 54.5 Z" fill="#FFFFFF" stroke="#5C3A21" stroke-width="1.2"/>`;
+    }
+
+    return eyesAndGlasses + mouth;
+  }
+
+  function scArmsSVG(sleeves, skin, jersey, stripe) {
+    const armFill = sleeves === 'warmers' ? jersey : skin;
+    return `
+      <path d="M44 74 C35 86, 34 104, 38 118" fill="none" stroke="${armFill}" stroke-width="10" stroke-linecap="round"/>
+      <path d="M96 74 C105 86, 106 104, 102 118" fill="none" stroke="${armFill}" stroke-width="10" stroke-linecap="round"/>
+      <path d="M45 72 L54 72 L50 89 L40 86 Z" fill="${jersey}"/>
+      <path d="M86 72 L95 72 L100 86 L90 89 Z" fill="${jersey}"/>
+      <circle cx="38" cy="119" r="5.5" fill="#18181B" stroke="${stripe}" stroke-width="1.5"/>
+      <circle cx="102" cy="119" r="5.5" fill="#18181B" stroke="${stripe}" stroke-width="1.5"/>
+    `;
+  }
+
+  function scLegsAndPantsSVG(cfg, stripe, sockAccent) {
+    if (cfg.pantsLength === 'long') {
+      return `
+        <rect x="52" y="138" width="13" height="66" rx="5" fill="${cfg.shorts}" stroke="#27272A" stroke-width="1.1"/>
+        <rect x="75" y="138" width="13" height="66" rx="5" fill="${cfg.shorts}" stroke="#27272A" stroke-width="1.1"/>
+        <path d="M48 116 L92 116 L90 152 L73 152 L70 135 L67 152 L50 152 Z" fill="${cfg.shorts}" stroke="#27272A" stroke-width="1.2"/>
+        <rect x="50" y="147" width="17" height="3.5" rx="1.5" fill="${stripe}"/>
+        <rect x="73" y="147" width="17" height="3.5" rx="1.5" fill="${stripe}"/>
+        <line x1="58.5" y1="154" x2="58.5" y2="202" stroke="${stripe}" stroke-width="1.3" stroke-opacity="0.7"/>
+        <line x1="81.5" y1="154" x2="81.5" y2="202" stroke="${stripe}" stroke-width="1.3" stroke-opacity="0.7"/>
+      `;
+    }
+
+    return `
+      <rect x="52" y="138" width="13" height="52" rx="6" fill="${cfg.skin}"/>
+      <rect x="75" y="138" width="13" height="52" rx="6" fill="${cfg.skin}"/>
+      <rect x="52" y="172" width="13" height="32" rx="3" fill="${cfg.socks}"/>
+      <rect x="75" y="172" width="13" height="32" rx="3" fill="${cfg.socks}"/>
+      <rect x="52" y="176" width="13" height="3.5" fill="${sockAccent}"/>
+      <rect x="75" y="176" width="13" height="3.5" fill="${sockAccent}"/>
+      <path d="M48 116 L92 116 L90 152 L73 152 L70 135 L67 152 L50 152 Z" fill="${cfg.shorts}" stroke="#27272A" stroke-width="1.2"/>
+      <rect x="50" y="147" width="17" height="3.5" rx="1.5" fill="${stripe}"/>
+      <rect x="73" y="147" width="17" height="3.5" rx="1.5" fill="${stripe}"/>
+    `;
+  }
+
+  function scShoesSVG(style, color) {
+    if (style === 'mtb') {
+      return `
+        <path d="M46 204 L66 204 L67 219 L43 219 C40 216, 41 212, 44 210 Z" fill="${color}" stroke="#18181B" stroke-width="1.4"/>
+        <path d="M74 204 L94 204 L96 210 C99 212, 100 216, 97 219 L73 219 Z" fill="${color}" stroke="#18181B" stroke-width="1.4"/>
+        <rect x="42" y="219" width="25" height="4" rx="1.5" fill="#27272A"/>
+        <rect x="73" y="219" width="25" height="4" rx="1.5" fill="#27272A"/>
+      `;
+    }
+    if (style === 'gravel') {
+      return `
+        <path d="M47 204 L66 204 L67 219 L43 219 C41 216, 42 212, 45 210 Z" fill="${color}" stroke="#18181B" stroke-width="1.4"/>
+        <path d="M74 204 L93 204 L95 210 C98 212, 99 216, 97 219 L73 219 Z" fill="${color}" stroke="#18181B" stroke-width="1.4"/>
+        <line x1="51" y1="208" x2="61" y2="208" stroke="#18181B" stroke-width="1.4" stroke-dasharray="2 2"/>
+        <line x1="79" y1="208" x2="89" y2="208" stroke="#18181B" stroke-width="1.4" stroke-dasharray="2 2"/>
+      `;
+    }
+    return `
+      <path d="M47 204 L66 204 L67 218 C67 221, 64 223, 60 223 L44 223 C41 223, 41 218, 44 214 Z" fill="${color}" stroke="#18181B" stroke-width="1.4"/>
+      <path d="M74 204 L93 204 L96 214 C99 218, 99 223, 96 223 L80 223 C76 223, 73 221, 73 218 Z" fill="${color}" stroke="#18181B" stroke-width="1.4"/>
+      <circle cx="57" cy="211" r="2.1" fill="#18181B"/>
+      <circle cx="83" cy="211" r="2.1" fill="#18181B"/>
+    `;
+  }
+
+  function generateSoloCyclistSVG(cfg = soloCyclistState) {
+    const stripe = cfg.jersey === '#A3E635' ? '#0A2E1D' : '#A3E635';
+    const sockAccent = cfg.socks === '#A3E635' ? '#18181B' : '#A3E635';
+
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 240" class="w-full h-full">
+        <defs>
+          <radialGradient id="scBgGlow" cx="50%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#A3E635" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#131A22" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="140" height="240" rx="16" fill="url(#scBgGlow)"/>
+        <ellipse cx="70" cy="226" rx="34" ry="5" fill="#000000" fill-opacity="0.5"/>
+        ${scHairSVG(cfg.hair, cfg.skin)}
+        ${scLegsAndPantsSVG(cfg, stripe, sockAccent)}
+        ${scShoesSVG(cfg.shoeStyle, cfg.shoes)}
+        ${scArmsSVG(cfg.sleeves, cfg.skin, cfg.jersey, stripe)}
+        <path d="M46 70 C46 65, 56 62, 70 62 C84 62, 94 65, 94 70 L91 118 L49 118 Z" fill="${cfg.jersey}" stroke="#1F2A37" stroke-width="1.2"/>
+        <rect x="48" y="86" width="44" height="7" fill="${stripe}"/>
+        <line x1="70" y1="63" x2="70" y2="118" stroke="#E4E4E7" stroke-width="1.2" stroke-opacity="0.65"/>
+        <rect x="64" y="54" width="12" height="11" rx="4" fill="${cfg.skin}"/>
+        <rect x="55" y="25" width="30" height="33" rx="14" fill="${cfg.skin}"/>
+        <path d="M51 32 C51 16, 89 16, 89 32 C85 30, 55 30, 51 32 Z" fill="${cfg.helmet}" stroke="#18181B" stroke-width="1.2"/>
+        <rect x="61" y="20" width="4" height="7" rx="2" fill="#18181B" fill-opacity="0.6"/>
+        <rect x="68" y="19" width="4" height="8" rx="2" fill="#18181B" fill-opacity="0.6"/>
+        <rect x="75" y="20" width="4" height="7" rx="2" fill="#18181B" fill-opacity="0.6"/>
+        ${scFaceSVG(cfg.mood, cfg.glasses)}
+      </svg>
+    `;
+  }
+
+  function generateSoloBikeSVG(cfg = soloCyclistState) {
+    const r = cfg.bikeType === 'mtb' || cfg.bikeType === 'enduro' ? 21.5 : 19.5;
+    const tireW = cfg.bikeType === 'mtb' || cfg.bikeType === 'enduro' ? 4.4 : 3.1;
+    const dropBar = cfg.bikeType === 'ruta' || cfg.bikeType === 'gravel';
+
+    const barSvg = dropBar
+      ? `<path d="M111 31 L119 31 C124 31, 126 37, 121 42 L117 43" fill="none" stroke="#E4E4E7" stroke-width="2.5" stroke-linecap="round"/>`
+      : `<line x1="107" y1="30" x2="122" y2="30" stroke="#E4E4E7" stroke-width="3" stroke-linecap="round"/>`;
+
+    const extraSvg = cfg.bikeType === 'gravel'
+      ? `<polygon points="77,41 108,39 91,62" fill="${cfg.bikeFrame}" fill-opacity="0.28" stroke="${cfg.bikeFrame}" stroke-width="1.3"/>`
+      : cfg.bikeType === 'urbana'
+        ? `<path d="M29 61 A19 19 0 0 1 65 53" fill="none" stroke="#A1A1AA" stroke-width="2.2" stroke-linecap="round"/>
+           <path d="M113 61 A19 19 0 0 1 149 53" fill="none" stroke="#A1A1AA" stroke-width="2.2" stroke-linecap="round"/>`
+        : cfg.bikeType === 'enduro'
+          ? `<line x1="48" y1="66" x2="56" y2="54" stroke="#A1A1AA" stroke-width="3" stroke-linecap="round"/>`
+          : '';
+
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 96" class="w-full h-full">
+        <ellipse cx="90" cy="90" rx="58" ry="3.5" fill="#000000" fill-opacity="0.45"/>
+        <circle cx="48" cy="66" r="${r}" fill="none" stroke="${cfg.bikeWheel}" stroke-width="${tireW}"/>
+        <circle cx="132" cy="66" r="${r}" fill="none" stroke="${cfg.bikeWheel}" stroke-width="${tireW}"/>
+        <circle cx="48" cy="66" r="3" fill="#D4D4D8"/>
+        <circle cx="132" cy="66" r="3" fill="#D4D4D8"/>
+        <polyline points="48,66 88,66 74,38 114,36 88,66" fill="none" stroke="${cfg.bikeFrame}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+        <line x1="48" y1="66" x2="74" y2="38" stroke="${cfg.bikeFrame}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="114" y1="36" x2="132" y2="66" stroke="${cfg.bikeFrame}" stroke-width="3.5" stroke-linecap="round"/>
+        ${extraSvg}
+        <line x1="74" y1="38" x2="71" y2="31" stroke="#D4D4D8" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M64 30 L79 30 C82 30, 82 33, 78 33 L66 33 C63 33, 63 30, 64 30 Z" fill="#F4F4F5"/>
+        <line x1="114" y1="36" x2="113" y2="31" stroke="#D4D4D8" stroke-width="2.5" stroke-linecap="round"/>
+        ${barSvg}
+        <circle cx="88" cy="66" r="6" fill="#18181B" stroke="#A1A1AA" stroke-width="1.8"/>
+      </svg>
+    `;
+  }
+
+  function renderSoloCyclist() {
+    const box = document.getElementById('solo-cyclist-svg-box');
+    const sum = document.getElementById('solo-cyclist-summary');
+    const bikeBox = document.getElementById('solo-bike-svg-box');
+    const bikeTypeBadge = document.getElementById('sc-bike-type-badge');
+    const bikeNickEl = document.getElementById('sc-bike-nick-preview');
+    const bikeColorEl = document.getElementById('sc-bike-color-preview');
+
+    if (box) box.innerHTML = generateSoloCyclistSVG(soloCyclistState);
+    if (bikeBox) bikeBox.innerHTML = generateSoloBikeSVG(soloCyclistState);
+
+    if (sum) {
+      const pantsLabel = soloCyclistState.pantsLength === 'long' ? 'Pantalón Largo' : 'Corto';
+      const sleeveLabel = soloCyclistState.sleeves === 'warmers' ? 'Manguitos' : 'Manga Corta';
+      const shoeLabel = document.getElementById('sc-shoes')?.selectedOptions?.[0]?.textContent || 'Verde Lima';
+      sum.textContent = `${pantsLabel} • ${sleeveLabel} • ${shoeLabel}`;
+    }
+
+    if (bikeTypeBadge) bikeTypeBadge.textContent = soloCyclistState.bikeType.toUpperCase();
+    if (bikeNickEl) {
+      const cleanNick = soloCyclistState.bikeNick.trim();
+      bikeNickEl.textContent = cleanNick ? `“${cleanNick}”` : 'Sin apodo';
+    }
+    if (bikeColorEl) {
+      const frameLabel = document.getElementById('sc-bike-frame')?.selectedOptions?.[0]?.textContent || 'Verde Lima';
+      bikeColorEl.textContent = `Cuadro ${frameLabel}`;
+    }
+  }
+
+  function updateSoloCyclist() {
+    const val = id => document.getElementById(id)?.value;
+    soloCyclistState.skin = val('sc-skin') || soloCyclistState.skin;
+    soloCyclistState.hair = val('sc-hair') || soloCyclistState.hair;
+    soloCyclistState.mood = val('sc-mood') || soloCyclistState.mood;
+    soloCyclistState.helmet = val('sc-helmet') || soloCyclistState.helmet;
+    soloCyclistState.glasses = val('sc-glasses') || soloCyclistState.glasses;
+    soloCyclistState.sleeves = val('sc-sleeves') || soloCyclistState.sleeves;
+    soloCyclistState.jersey = val('sc-jersey') || soloCyclistState.jersey;
+    soloCyclistState.pantsLength = val('sc-pants-length') || soloCyclistState.pantsLength;
+    soloCyclistState.shorts = val('sc-shorts') || soloCyclistState.shorts;
+    soloCyclistState.socks = val('sc-socks') || soloCyclistState.socks;
+    soloCyclistState.shoeStyle = val('sc-shoe-style') || soloCyclistState.shoeStyle;
+    soloCyclistState.shoes = val('sc-shoes') || soloCyclistState.shoes;
+    soloCyclistState.bikeNick = val('sc-bike-nick') ?? '';
+    soloCyclistState.bikeType = val('sc-bike-type') || soloCyclistState.bikeType;
+    soloCyclistState.bikeFrame = val('sc-bike-frame') || soloCyclistState.bikeFrame;
+    soloCyclistState.bikeWheel = val('sc-bike-wheel') || soloCyclistState.bikeWheel;
+    renderSoloCyclist();
+  }
+
+  function randomizeSoloCyclist() {
+    const ids = [
+      'sc-skin', 'sc-hair', 'sc-mood', 'sc-helmet', 'sc-glasses',
+      'sc-sleeves', 'sc-jersey', 'sc-pants-length', 'sc-shorts',
+      'sc-socks', 'sc-shoe-style', 'sc-shoes',
+      'sc-bike-type', 'sc-bike-frame', 'sc-bike-wheel'
+    ];
+    ids.forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel && sel.options.length) {
+        sel.selectedIndex = Math.floor(Math.random() * sel.options.length);
+      }
+    });
+    updateSoloCyclist();
+  }
+
+  function saveSoloCyclist() {
+    const svgUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(generateSoloCyclistSVG(soloCyclistState));
+    const cleanNick = soloCyclistState.bikeNick.trim();
+    if (typeof state !== 'undefined' && state.user) {
+      state.user.soloCyclistAvatar = { ...soloCyclistState, bikeNick: cleanNick, svgUrl };
+    }
+    if (typeof showToast === 'function') {
+      showToast(cleanNick ? `🚴 Avatar y bicicleta “${cleanNick}” guardados` : '🚴 Avatar y bicicleta guardados');
+    }
+  }
+
+  renderSoloCyclist();
+</script>
+<!-- ==========================================
+// ========================================== -->
+
+
+</body>
+</html>
