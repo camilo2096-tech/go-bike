@@ -8,6 +8,19 @@
 <meta name="theme-color" content="#84cc16">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+const SUPABASE_URL = 'https://kxjhrjebjesflnplfyu.supabase.co';
+
+const SUPABASE_ANON_KEY = 'sb_publishable_lcuemE4zBKHIlRlsypxEjA__bcqBJQrh';
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+console.log('Supabase conectado');
+</script>
   <script>
     tailwind.config = {
       darkMode: 'class',
