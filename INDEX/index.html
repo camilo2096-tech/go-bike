@@ -2103,11 +2103,28 @@ CREATE TABLE inscripciones (
       enterApp();
     }
 
-    function handleRegister(e) {
+    async function handleRegister(e) {
       e.preventDefault();
-      const name = document.getElementById('reg-name').value.trim();
+    const name = document.getElementById('reg-name').value.trim();
+const email = document.getElementById('reg-email').value.trim();
+
+const password = prompt('Crea una contraseña para tu cuenta');
+
+if (!password) {
+  showToast('Debes crear una contraseña', 'error');
+  return;
+}
+
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password
+});
+
+if (error) {
+  showToast(error.message, 'error');
+  return;
+}
       const city = document.getElementById('reg-city').value;
-      const email = document.getElementById('reg-email').value.trim();
       const type = document.getElementById('reg-type').value;
       const level = document.getElementById('reg-level').value;
       const bio = document.getElementById('reg-bio').value.trim() || 'Ciclista activo de la comunidad GO BIKE.';
